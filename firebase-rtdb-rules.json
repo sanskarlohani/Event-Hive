@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "chats": {
+      "$roomId": {
+        ".read": "auth != null && root.child('chatAccess').child(auth.uid).child($roomId).val() === true",
+        ".write": false,
+        "metadata": {
+          ".read": "auth != null && root.child('chatAccess').child(auth.uid).child($roomId).val() === true"
+        },
+        "messages": {
+          "$messageId": {
+            ".write": "auth != null && root.child('chatAccess').child(auth.uid).child($roomId).val() === true && root.child('chats').child($roomId).child('metadata').child('readOnly').val() != true"
+          }
+        }
+      }
+    },
+    "chatAccess": {
+      "$uid": {
+        ".read": "auth.uid === $uid",
+        ".write": false
+      }
+    }
+  }
+}

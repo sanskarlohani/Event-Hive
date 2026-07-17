@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function currentUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isSuperAdmin() {
+      return currentUserDoc().data.systemRole == "superAdmin";
+    }
+
+    function isStudentGuideUser() {
+      let role = currentUserDoc().data.systemRole;
+      return role == "studentGuide"
+        || role == "studentguide"
+        || role == "student_guide"
+        || role == "student guide";
+    }
+
+    function isStudentGuide(collegeId) {
+      return get(/databases/$(database)/documents/colleges/$(collegeId))
+        .data.studentGuideUid == request.auth.uid;
+    }
+
+    function isCollegeMember(collegeId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid))
+        .data.collegeId == collegeId;
+    }
+
+    function hasEffectivePerm(perm, collegeId) {
+      let u = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return u.data.collegeId == collegeId
+        && u.data.effectivePermissions[perm] == true;
+    }
+
+    function hasUserPerm(perm) {
+      return currentUserDoc().data.effectivePermissions[perm] == true;
+    }
+
+    function isClubMember(categoryId, clubId) {
+      return exists(
+        /databases/$(database)/documents/Categories/$(categoryId)/Clubs/$(clubId)/Members/$(request.auth.uid)
+      );
+    }
+
+    function isClubAdmin(categoryId, clubId) {
+      return get(
+        /databases/$(database)/documents/Categories/$(categoryId)/Clubs/$(clubId)/Members/$(request.auth.uid)
+      ).data.role == "ADMIN";
+    }
+
+    function canManageEvents(categoryId, clubId) {
+      return isSignedIn() && (
+        isSuperAdmin()
+        || isStudentGuideUser()
+        || hasUserPerm("canCreateEvent")
+        || hasUserPerm("canEditEvent")
+        || isClubAdmin(categoryId, clubId)
+      );
+    }
+
+    match /colleges/{collegeId} {
+      allow read: if true;
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || isStudentGuide(collegeId);
+      allow delete: if isSuperAdmin();
+
+      match /roles/{roleId} {
+        allow read: if isCollegeMember(collegeId);
+        allow write: if isStudentGuide(collegeId) || isSuperAdmin();
+      }
+    }
+
+    match /users/{uid} {
+      allow read, write: if request.auth.uid == uid;
+      allow read: if isSuperAdmin()
+        || isStudentGuide(
+          get(/databases/$(database)/documents/users/$(uid)).data.collegeId
+        );
+      allow update: if isSuperAdmin();
+    }
+
+    match /Categories/{categoryId} {
+      allow read: if true;
+      allow write: if isSignedIn() && (isSuperAdmin() || isStudentGuideUser());
+
+      match /Clubs/{clubId} {
+        allow read: if true;
+        allow create: if isSignedIn() && (isSuperAdmin() || isStudentGuideUser() || hasUserPerm("canCreateClub"));
+        allow update: if isSignedIn() && (
+          isSuperAdmin()
+          || isStudentGuideUser()
+          || hasUserPerm("canCreateClub")
+          || hasUserPerm("canEditEvent")
+          || isClubAdmin(categoryId, clubId)
+        );
+        allow delete: if isSignedIn() && (
+          isSuperAdmin()
+          || isStudentGuideUser()
+          || isClubAdmin(categoryId, clubId)
+        );
+
+        match /Members/{uid} {
+          allow read: if isSignedIn();
+          allow write: if isSignedIn() && (
+            request.auth.uid == uid
+            || isSuperAdmin()
+            || isStudentGuideUser()
+            || hasUserPerm("canManageClubMembers")
+            || isClubAdmin(categoryId, clubId)
+          );
+        }
+
+        match /Events/{eventId} {
+          allow read: if true;
+          allow create, update, delete: if canManageEvents(categoryId, clubId);
+        }
+      }
+    }
+
+    match /anonAliases/{collegeId}/{dateKey}/{uid} {
+      allow read, write: if false;
+    }
+
+    // Keep this fallback at the end.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

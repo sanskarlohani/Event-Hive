@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M100,20 C144.18,20 180,55.82 180,100 C180,144.18 144.18,180 100,180 C55.82,180 20,144.18 20,100 C20,55.82 55.82,20 100,20 Z" />
+
+    <!-- Letter S -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,70 L80,70 Q85,70 85,75 Q85,80 80,80 L65,80 Q60,80 60,85 Q60,90 65,90 L80,90 Q90,90 90,100 Q90,110 80,110 L60,110 Q55,110 55,105 Q55,100 60,100 L75,100 Q80,100 80,95 Q80,90 75,90 L60,90 Q50,90 50,80 Q50,70 60,70 Z" />
+
+    <!-- Letter U -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M110,70 L120,70 L120,100 Q120,110 130,110 L140,110 Q150,110 150,100 L150,70 L160,70 L160,100 Q160,120 140,120 L130,120 Q110,120 110,100 L110,70 Z" />
+
+    <!-- Simple "EVENTS" text as paths -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,130 L50,150 L70,150 L70,145 L55,145 L55,142 L68,142 L68,138 L55,138 L55,135 L70,135 L70,130 L50,130 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M75,130 L75,150 L80,150 L80,142 L85,150 L90,150 L85,142 Q90,142 90,135 Q90,130 85,130 L75,130 Z M80,135 L80,138 L85,138 Q85,135 85,135 L80,135 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M95,130 L95,150 L100,150 L100,142 L105,150 L110,150 L105,142 Q110,142 110,135 Q110,130 105,130 L95,130 Z M100,135 L100,138 L105,138 Q105,135 105,135 L100,135 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M115,130 L115,150 L135,150 L135,145 L120,145 L120,142 L133,142 L133,138 L120,138 L120,135 L135,135 L135,130 L115,130 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M140,130 L140,150 L145,150 L145,142 L155,150 L160,150 L150,140 L160,130 L155,130 L145,138 L145,130 L140,130 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M165,130 L165,135 L170,135 Q175,135 175,140 Q175,145 170,145 L165,145 L165,150 L170,150 Q180,150 180,140 Q180,130 170,130 L165,130 Z" />
+
+</vector>

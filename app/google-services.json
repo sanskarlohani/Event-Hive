@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "152874280155",
+    "project_id": "sit-event",
+    "storage_bucket": "sit-event.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:152874280155:android:85a61c6e25dad33398d8fe",
+        "android_client_info": {
+          "package_name": "com.sanskar.eventhive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCu6vJ4KkGcXw-d6Rkr1AvNY5pWVe0pNUg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
