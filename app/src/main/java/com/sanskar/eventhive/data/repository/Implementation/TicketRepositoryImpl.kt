@@ -101,7 +101,7 @@ class TicketRepositoryImpl @Inject constructor(
             .update(
                 mapOf(
                     "status" to RegistrationStatus.CANCELLED,
-                    "isValid" to false,
+                    "valid" to false,
                     "redeemedAt" to null
                 )
             )
@@ -131,14 +131,14 @@ class TicketRepositoryImpl @Inject constructor(
             if (userId !in ticket.participantIds && ticket.userId != userId) {
                 return Resource.Error(IllegalAccessException("User is not part of this ticket"))
             }
-            if (!ticket.isValid || ticket.status == RegistrationStatus.CANCELLED || ticket.status == RegistrationStatus.CLAIMED) {
+            if (!ticket.valid || ticket.status == RegistrationStatus.CANCELLED || ticket.status == RegistrationStatus.CLAIMED) {
                 return Resource.Error(IllegalStateException("Ticket is not redeemable"))
             }
 
             ticketRef
                 .update(
                     mapOf(
-                        "isValid" to false,
+                        "valid" to false,
                         "redeemedAt" to FieldValue.serverTimestamp(),
                         "status" to RegistrationStatus.CLAIMED
                     )
@@ -196,7 +196,10 @@ class TicketRepositoryImpl @Inject constructor(
     }
 
     override fun getAllTicketsForUser(userId: String): Flow<List<Ticket>> = callbackFlow {
-
+        if (userId.isBlank()) {
+            trySend(emptyList()).isSuccess
+            return@callbackFlow
+        }
         val registration: ListenerRegistration = firestore
             .collection(TICKETS)
             .whereArrayContains("participantIds", userId)
@@ -208,7 +211,6 @@ class TicketRepositoryImpl @Inject constructor(
                 snap?.let { trySend(it.toObjects(Ticket::class.java)).isSuccess }
             }
         awaitClose { registration.remove() }
-
     }
 
     override fun getSingleTicketForUser(userId: String, ticketId: String): Flow<Ticket?> = callbackFlow {

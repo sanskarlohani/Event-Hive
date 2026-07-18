@@ -21,7 +21,7 @@ data class Ticket(
     val status: RegistrationStatus = RegistrationStatus.CONFIRMED,
 
     val redeemedAt: com.google.firebase.Timestamp? = null,
-    val isValid: Boolean = true,
+    val valid: Boolean = true,
     val additionalInfoAskByEventOrganizer: List<AdditionalInfoAskFromUser> = emptyList(),
     val additionalInfoAnswers: Map<String, String> = emptyMap(),
 )

@@ -8,6 +8,7 @@ import com.sanskar.eventhive.data.repository.ChatRepository
 import com.sanskar.eventhive.presentation.permission.PermissionHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.sanskar.eventhive.data.repository.toSafeUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,8 @@ class ChatViewModel @Inject constructor(
 
     val inputText = MutableStateFlow("")
 
+    private val _currentUserProfile = MutableStateFlow<com.sanskar.eventhive.data.model.User?>(null)
+
     private val _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
@@ -41,6 +44,22 @@ class ChatViewModel @Inject constructor(
     private var currentRoomId: String = ""
     private var currentMetadata: ChatRoomMetadata = ChatRoomMetadata()
     private var loadedMessages: List<RtdbChatMessage> = emptyList()
+
+    init {
+        observeCurrentUser()
+    }
+
+    private fun observeCurrentUser() {
+        viewModelScope.launch {
+            val uid = auth.currentUser?.uid.orEmpty()
+            if (uid.isNotBlank()) {
+                firestore.collection("users").document(uid)
+                    .addSnapshotListener { snapshot, _ ->
+                        _currentUserProfile.value = snapshot?.toSafeUser()
+                    }
+            }
+        }
+    }
 
     fun loadRooms() {
         roomsJob?.cancel()
@@ -81,15 +100,15 @@ class ChatViewModel @Inject constructor(
         val trimmed = text.trim()
         if (trimmed.isBlank()) return
 
+        val profile = _currentUserProfile.value
+        if (profile == null) {
+            _messagesState.value = MessageUiState.Error("User profile not loaded")
+            return
+        }
+
         viewModelScope.launch {
-            val uid = auth.currentUser?.uid.orEmpty()
-            if (uid.isBlank()) {
-                _messagesState.value = MessageUiState.Error("Not signed in")
-                return@launch
-            }
-            val profile = firestore.collection("users").document(uid).get().await()
-            val displayName = profile.getString("name") ?: auth.currentUser?.displayName ?: "User"
-            val collegeId = profile.getString("collegeId")
+            val displayName = profile.name.ifBlank { auth.currentUser?.displayName ?: "User" }
+            val collegeId = profile.collegeId
             chatRepository.sendMessage(
                 roomId = roomId,
                 text = trimmed,

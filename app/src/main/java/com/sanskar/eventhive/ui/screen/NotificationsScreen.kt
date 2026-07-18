@@ -2,10 +2,10 @@ package com.sanskar.eventhive.ui.screen
 
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.NotificationsNone
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,7 +37,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,10 +44,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.sanskar.eventhive.data.model.Notification
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.theme.AppDimens
 import com.sanskar.eventhive.ui.viewModel.NotificationViewModel
 import java.text.SimpleDateFormat
@@ -61,7 +60,7 @@ import java.util.Locale
 @Composable
 fun NotificationsScreen(
     navController: NavController,
-    viewModel: NotificationViewModel = hiltViewModel()
+    viewModel: NotificationViewModel = hiltViewModel(),
 ) {
     val notifications by viewModel.notifications.collectAsStateWithLifecycle(initialValue = emptyList())
     val readOverrides = remember { mutableStateMapOf<String, Boolean>() }
@@ -77,10 +76,10 @@ fun NotificationsScreen(
                 time = runCatching { notification.timestamp.toDate() }.getOrElse { java.util.Date(0) }
             }
             when {
-                cal.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
-                    cal.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR) -> today += notification
-                cal.get(Calendar.YEAR) == now.get(Calendar.YEAR) &&
-                    cal.get(Calendar.WEEK_OF_YEAR) == now.get(Calendar.WEEK_OF_YEAR) -> thisWeek += notification
+                (cal.get(Calendar.YEAR) == now.get(Calendar.YEAR)) &&
+                    (cal.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)) -> today += notification
+                (cal.get(Calendar.YEAR) == now.get(Calendar.YEAR)) &&
+                    (cal.get(Calendar.WEEK_OF_YEAR) == now.get(Calendar.WEEK_OF_YEAR)) -> thisWeek += notification
                 else -> earlier += notification
             }
         }
@@ -171,7 +170,7 @@ private fun navigateNotificationDeepLink(navController: NavController, deepLink:
 
     runCatching {
         if (cleaned.startsWith("eventhive://", ignoreCase = true)) {
-            navController.navigate(Uri.parse(cleaned))
+            navController.navigate(cleaned.toUri())
         } else {
             navController.navigate(cleaned)
         }
@@ -187,8 +186,8 @@ private fun NotificationRow(
     onClick: () -> Unit
 ) {
     val icon = when {
-        notification.title.contains("ticket", true) -> Icons.Default.ConfirmationNumber
-        notification.title.contains("event", true) -> Icons.Default.CalendarMonth
+        notification.title.contains(other = "ticket", ignoreCase = true) -> Icons.Default.ConfirmationNumber
+        notification.title.contains(other = "event", ignoreCase = true) -> Icons.Default.CalendarMonth
         else -> Icons.Default.Campaign
     }
     val iconTint = when {
@@ -197,46 +196,50 @@ private fun NotificationRow(
         else -> MaterialTheme.colorScheme.primary
     }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (read) {
-                MaterialTheme.colorScheme.surface
-            } else {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.34f)
-            }
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+    val cardBg = if (read) {
+        MaterialTheme.colorScheme.surface
+    } else {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+    }
+
+    ClayCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        cornerRadius = 20.dp,
+        elevation = 6.dp,
+        backgroundColor = cardBg
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
             Row(modifier = Modifier.weight(1f)) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
+                Box(
                     modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(iconTint.copy(alpha = 0.12f))
-                        .padding(7.dp)
-                )
-                Spacer(modifier = Modifier.size(10.dp))
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(iconTint.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.size(12.dp))
                 Column {
                     Text(
                         text = notification.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = if (read) FontWeight.Medium else FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = if (read) FontWeight.Bold else FontWeight.ExtraBold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        color = if (read) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -251,16 +254,17 @@ private fun NotificationRow(
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = formatTimestamp(notification),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold
                 )
                 if (!read) {
-                    Spacer(modifier = Modifier.height(7.dp))
-                    Icon(
-                        imageVector = Icons.Default.NotificationsNone,
-                        contentDescription = "Unread",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
                     )
                 }
             }

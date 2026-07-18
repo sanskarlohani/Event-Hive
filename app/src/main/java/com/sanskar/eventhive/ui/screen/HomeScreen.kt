@@ -64,6 +64,7 @@ import com.sanskar.eventhive.data.model.Category
 import com.sanskar.eventhive.data.model.Club
 import com.sanskar.eventhive.data.model.Event
 import com.sanskar.eventhive.ui.components.BottomBarScaffold
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.navigation.NavigationItem
 import com.sanskar.eventhive.ui.theme.AppDimens
 import com.sanskar.eventhive.ui.viewModel.ClubCategoryViewModel
@@ -86,7 +87,7 @@ fun HomeScreen(
     categoryVm: ClubCategoryViewModel = hiltViewModel(),
     clubVm: ClubViewModel = hiltViewModel(),
     eventVm: EventViewModel = hiltViewModel(),
-    userVm: UserViewModel = hiltViewModel()
+    userVm: UserViewModel = hiltViewModel(),
 ) {
     val categories by categoryVm.categories.collectAsStateWithLifecycle()
     val clubs by clubVm.allClubs.collectAsStateWithLifecycle()
@@ -108,12 +109,14 @@ fun HomeScreen(
     val upcomingEvents by remember(events, selectedCategory, now) {
         derivedStateOf {
             events
+                .asSequence()
                 .filter { event ->
                     val startsAfterNow = event.startTime?.toLocalDateTime()?.isAfter(now) == true
-                    val categoryMatches = selectedCategory.isNullOrBlank() || event.categoryId == selectedCategory
+                    val categoryMatches = selectedCategory.isNullOrBlank() || (event.categoryId == selectedCategory)
                     startsAfterNow && categoryMatches
                 }
                 .sortedBy { it.startTime?.toLocalDateTime() }
+                .toList()
         }
     }
     val featuredEvents = remember(upcomingEvents) { upcomingEvents.take(6) }
@@ -132,15 +135,16 @@ fun HomeScreen(
                 start = AppDimens.ScreenHorizontalPadding,
                 end = AppDimens.ScreenHorizontalPadding,
                 top = 18.dp,
-                bottom = 28.dp
+                bottom = 28.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.SectionGap)
+            verticalArrangement = Arrangement.spacedBy(AppDimens.SectionGap),
         ) {
             item {
                 HomeHeader(
                     userName = userName,
-                    onNotificationClick = { navController.navigate(NavigationItem.Notifications.route) }
-                )
+                ) {
+                    navController.navigate(NavigationItem.Notifications.route)
+                }
             }
             item {
                 SearchField()
@@ -243,7 +247,7 @@ fun HomeScreen(
 @Composable
 private fun HomeHeader(
     userName: String,
-    onNotificationClick: () -> Unit
+    onNotificationClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -328,7 +332,7 @@ private fun SectionHeading(
             text = title,
             style = MaterialTheme.typography.headlineMedium
         )
-        if (action != null && onActionClick != null) {
+        if ((action != null) && (onActionClick != null)) {
             Text(
                 text = "$action \u2192",
                 color = MaterialTheme.colorScheme.primary,
@@ -339,6 +343,7 @@ private fun SectionHeading(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun FeaturedEventCarousel(
     events: List<Event>,
@@ -353,20 +358,20 @@ private fun FeaturedEventCarousel(
 
     LazyRow(
         state = state,
-        contentPadding = PaddingValues(end = 24.dp),
+        contentPadding = PaddingValues(end = 24.dp, bottom = 12.dp, top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(events, key = { it.eventId }) { event ->
-            Card(
+            ClayCard(
                 modifier = Modifier
-                    .widthIn(min = 246.dp, max = 246.dp)
-                    .height(300.dp)
-                    .clickable { onClick(event) },
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+                    .widthIn(min = 260.dp, max = 260.dp)
+                    .height(320.dp),
+                onClick = { onClick(event) },
+                cornerRadius = 28.dp,
+                elevation = 10.dp,
+                backgroundColor = Color.Transparent
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(28.dp))) {
                     if (event.posterUrl.isNullOrBlank()) {
                         Box(
                             modifier = Modifier
@@ -451,18 +456,17 @@ private fun UpcomingEventCard(
     val dateText = start?.format(DateTimeFormatter.ofPattern("EEE, dd MMM")) ?: "Date TBD"
     val timeText = start?.format(DateTimeFormatter.ofPattern("hh:mm a")) ?: "Time TBD"
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ClayCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        cornerRadius = 20.dp,
+        elevation = 8.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!event.posterUrl.isNullOrBlank()) {
@@ -553,22 +557,21 @@ private fun CategoryChip(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(999.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
-        ),
-        border = BorderStroke(
-            1.dp,
-            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-        )
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary 
+                else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (selected) Color.White else MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
 }
@@ -582,19 +585,19 @@ private fun ClubGrid(
         clubs.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { club ->
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onClubClick(club) },
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ClayCard(
+                        modifier = Modifier.weight(1f),
+                        onClick = { onClubClick(club) },
+                        cornerRadius = 20.dp,
+                        elevation = 6.dp,
+                        backgroundColor = MaterialTheme.colorScheme.surface
                     ) {
                         Column {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(88.dp)
+                                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                             ) {
                                 if (!club.bannerUrl.isNullOrBlank()) {
                                     AsyncImage(

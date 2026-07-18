@@ -61,7 +61,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseDatabase(): FirebaseDatabase = Firebase.database
+    fun provideFirebaseDatabase(): FirebaseDatabase = 
+        FirebaseDatabase.getInstance("https://sit-event-default-rtdb.firebaseio.com/")
 
     @Provides
     fun provideContext(application: Application): Context {

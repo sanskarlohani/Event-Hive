@@ -1,3 +1,27 @@
 <resources>
     <string name="app_name">Event Hive</string>
+
+    <!-- Event Registration -->
+    <string name="registration_participation">Participation</string>
+    <string name="registration_individual">Individual</string>
+    <string name="registration_group">Group</string>
+    <string name="registration_team_details">Team Details</string>
+    <string name="registration_team_name">Team Name</string>
+    <string name="registration_select_members">Select Members (%1$d/%2$d)</string>
+    <string name="registration_select_members_title">Select Members</string>
+    <string name="registration_additional_info">Additional Information</string>
+    <string name="registration_register">Register</string>
+    <string name="registration_search_hint">Search by name/branch/year</string>
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_loading">Loading…</string>
+    <string name="common_error">Error</string>
+
+    <!-- Chat -->
+    <string name="chat_title">Chats</string>
+    <string name="chat_tab_dms">DMs</string>
+    <string name="chat_tab_clubs">Clubs</string>
+    <string name="chat_tab_events">Events</string>
+    <string name="chat_tab_anon">Anonymous</string>
+    <string name="chat_empty_rooms">No chat rooms</string>
 </resources>

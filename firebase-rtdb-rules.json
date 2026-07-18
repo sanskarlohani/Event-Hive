@@ -9,7 +9,7 @@
         },
         "messages": {
           "$messageId": {
-            ".write": "auth != null && root.child('chatAccess').child(auth.uid).child($roomId).val() === true && root.child('chats').child($roomId).child('metadata').child('readOnly').val() != true"
+            ".write": "auth != null && root.child('chatAccess').child(auth.uid).child($roomId).val() === true && (data.exists() || root.child('chats').child($roomId).child('metadata').child('readOnly').val() != true) && (!newData.exists() || newData.child('senderId').val() === auth.uid || (newData.child('senderId').val() === 'anon' && root.child('chats').child($roomId).child('metadata').child('type').val() === 'anonymous'))"
           }
         }
       }

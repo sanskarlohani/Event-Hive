@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,117 +33,81 @@ import com.sanskar.eventhive.data.model.Club
 fun ClubCard(
     club: Club,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    Card(
+    ClayCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(12.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            .padding(12.dp),
+        onClick = onClick,
+        cornerRadius = 24.dp,
+        backgroundColor = MaterialTheme.colorScheme.surfaceVariant
     ) {
-        Box {
-            // Header background
-            Box(
-                modifier = Modifier
-                    .height(80.dp)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary)
-            ) {
-                Text(
-                    text = club.name,
-                    modifier = Modifier.align(Alignment.Center),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-
-            // Body content offset below header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 56.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icon overlapping header
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.secondary
-                                    )
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icon 
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.secondaryContainer
                                 )
                             )
-                    ) {
-                        if (!club.logoUrl.isNullOrBlank()) {
-                            AsyncImage(
-                                model = club.logoUrl,
-                                contentDescription = club.name,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .align(Alignment.Center)
-                            )
-                        } else {
-                            Text(
-                                text = club.name.firstOrNull()?.toString() ?: "",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!club.logoUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = club.logoUrl,
+                            contentDescription = club.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Text(
+                            text = club.name.firstOrNull()?.toString() ?: "",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // Name and member count in a single row
-
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
                     Text(
                         text = club.name,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "${club.members.size} members",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-
-                if (!club.description.isNullOrBlank()) {
-                    Text(
-                        text = club.description.orEmpty(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            if (!club.description.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = club.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

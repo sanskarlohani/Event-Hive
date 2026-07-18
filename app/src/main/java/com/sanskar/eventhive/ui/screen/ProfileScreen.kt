@@ -1,6 +1,5 @@
 package com.sanskar.eventhive.ui.screen
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,13 +33,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -69,6 +65,8 @@ import coil.compose.AsyncImage
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.settings.ThemePreferenceManager
 import com.sanskar.eventhive.ui.components.BottomBarScaffold
+import com.sanskar.eventhive.ui.components.ClayButton
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.navigation.NavigationItem
 import com.sanskar.eventhive.ui.theme.AppDimens
 import com.sanskar.eventhive.ui.viewModel.AuthViewModel
@@ -83,7 +81,7 @@ fun ProfileScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     userViewModel: UserViewModel = hiltViewModel(),
     clubViewModel: ClubViewModel = hiltViewModel(),
-    ticketViewModel: TicketViewModel = hiltViewModel()
+    ticketViewModel: TicketViewModel = hiltViewModel(),
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val preferenceManager = remember { ThemePreferenceManager(context) }
@@ -161,7 +159,7 @@ fun ProfileScreen(
                 displayName = displayName,
                 email = displayEmail,
                 profileImageUrl = profileImageUrl,
-                onEditProfile = { navController.navigate(NavigationItem.EditProfile.route) }
+                onEditProfile = { navController.navigate(NavigationItem.EditProfile.route) },
             )
             StatsRow(
                 eventCount = eventCount,
@@ -222,25 +220,26 @@ fun ProfileScreen(
                 )
             }
             SectionTitle("Danger Zone", color = MaterialTheme.colorScheme.error)
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
+            ClayCard(
+                cornerRadius = 24.dp,
+                elevation = 8.dp,
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedButton(
+                    ClayButton(
+                        text = "Sign Out",
                         onClick = { showSignOutDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Sign Out")
-                    }
+                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                        textColor = MaterialTheme.colorScheme.error,
+                        cornerRadius = 16.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     TextButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.fillMaxWidth()
@@ -251,7 +250,7 @@ fun ProfileScreen(
                             tint = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Delete Account", color = MaterialTheme.colorScheme.error)
+                        Text("Delete Account", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -316,9 +315,10 @@ private fun ProfileHeroCard(
     profileImageUrl: String,
     onEditProfile: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+    ClayCard(
+        cornerRadius = 32.dp,
+        elevation = 12.dp,
+        backgroundColor = Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -330,18 +330,19 @@ private fun ProfileHeroCard(
                             MaterialTheme.colorScheme.primary,
                             Color(0xFF7F63FF)
                         )
-                    )
+                    ),
+                    shape = RoundedCornerShape(32.dp)
                 )
-                .padding(18.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(88.dp)
+                    .size(96.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.16f))
-                    .border(2.dp, Color.White, CircleShape),
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .border(3.dp, Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (profileImageUrl.isNotBlank()) {
@@ -355,34 +356,36 @@ private fun ProfileHeroCard(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = Color.White
             )
             Text(
                 text = email,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.75f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f)
             )
-            OutlinedButton(
+            
+            ClayButton(
+                text = "Edit Profile",
                 onClick = onEditProfile,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.72f))
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Edit Profile")
-            }
+                backgroundColor = Color.White.copy(alpha = 0.25f),
+                textColor = Color.White,
+                cornerRadius = 20.dp,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            )
         }
     }
 }
@@ -425,22 +428,25 @@ private fun StatsCard(
     value: String,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+    ClayCard(
+        modifier = modifier,
+        onClick = onClick,
+        cornerRadius = 20.dp,
+        elevation = 6.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .padding(vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(value, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.primary)
             Text(
                 title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -461,15 +467,16 @@ private fun SectionTitle(
 
 @Composable
 private fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+    ClayCard(
+        cornerRadius = 24.dp,
+        elevation = 8.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
+                .padding(4.dp),
             content = content
         )
     }

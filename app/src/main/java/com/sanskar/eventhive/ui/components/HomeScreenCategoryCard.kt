@@ -36,13 +36,12 @@ fun HomeScreenCategoryCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    Card(
+    ClayCard(
         modifier = modifier
-            .size(width = 200.dp, height = 160.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .size(width = 200.dp, height = 160.dp),
+        onClick = onClick,
+        cornerRadius = 24.dp,
+        backgroundColor = Color.Transparent
     ) {
         Box(
             modifier = Modifier
@@ -51,7 +50,7 @@ fun HomeScreenCategoryCard(
                     brush = Brush.linearGradient(
                         colors = listOf(PrimaryBrushBlue, MaterialTheme.colorScheme.secondary)
                     ),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(24.dp)
                 )
                 .padding(16.dp)
         ) {
@@ -65,29 +64,29 @@ fun HomeScreenCategoryCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = category.name,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onSecondary,
                         modifier = Modifier
-                            .size(22.dp)
-                            .padding(end = 6.dp)
+                            .size(24.dp)
+                            .padding(end = 8.dp)
                     )
 
                     Text(
                         text = category.name,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.onSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Description
                 category.description?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f),
+                        color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.85f),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -100,7 +99,7 @@ fun HomeScreenCategoryCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .background(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
                             shape = RoundedCornerShape(12.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -108,14 +107,14 @@ fun HomeScreenCategoryCard(
                     Icon(
                         imageVector = Icons.Default.Groups,
                         contentDescription = "Clubs",
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(14.dp)
+                        tint = MaterialTheme.colorScheme.onSecondary,
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${category.clubs.size} Clubs",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSecondary
                     )
                 }
             }

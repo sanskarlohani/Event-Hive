@@ -34,5 +34,6 @@ data class Club(
     val members: List<String> = emptyList(),
     val events: List<String> = emptyList(),
     var isPublic: Boolean = false,
+    val collegeId: String = "",
 )
 

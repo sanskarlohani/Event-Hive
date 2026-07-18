@@ -189,7 +189,7 @@ fun UserTicketDetailedScreen(
                         onClick = {},
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(if (ticket!!.isValid) "Share Ticket" else "Invalid Ticket")
+                        Text(if (ticket!!.valid) "Share Ticket" else "Invalid Ticket")
                     }
                 }
             }

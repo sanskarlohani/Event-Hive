@@ -18,13 +18,14 @@ import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -41,7 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,8 @@ import androidx.navigation.NavController
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.data.model.College
 import com.sanskar.eventhive.data.model.User
+import com.sanskar.eventhive.ui.components.ClayButton
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.navigation.NavigationItem
 import com.sanskar.eventhive.ui.viewModel.AuthViewModel
 import com.sanskar.eventhive.ui.viewModel.SignUpFormViewModel
@@ -101,249 +104,273 @@ fun SignUpScreen(
         snackbarHost = { SnackbarHost(snackbarHost) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
                             MaterialTheme.colorScheme.background,
-                            Color(0xFFEAF3FF),
-                        ),
-                    ),
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                        )
+                    )
                 )
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Text("Create Account", style = MaterialTheme.typography.headlineMedium)
-
-            OutlinedTextField(
-                value = fullName,
-                onValueChange = { fullName = it },
-                label = { Text("Full Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it.trim() },
-                label = { Text("College Email / Email") },
-                leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Email, null) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            ExposedDropdownMenuBox(
-                expanded = collegeMenuExpanded,
-                onExpandedChange = { collegeMenuExpanded = !collegeMenuExpanded },
+            ClayCard(
+                cornerRadius = 28.dp,
+                elevation = 10.dp,
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.padding(vertical = 24.dp)
             ) {
-                OutlinedTextField(
-                    value = selectedCollege?.name.orEmpty(),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("College (Listed only)") },
-                    leadingIcon = { androidx.compose.material3.Icon(Icons.Default.School, null) },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = collegeMenuExpanded)
-                    },
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(),
-                )
-                DropdownMenu(
-                    expanded = collegeMenuExpanded,
-                    onDismissRequest = { collegeMenuExpanded = false },
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    colleges.forEach { college ->
-                        DropdownMenuItem(
-                            text = { Text("${college.name} (${college.collegeCode})") },
-                            onClick = {
-                                selectedCollege = college
-                                if (course.isNotBlank() && course !in college.listedCourses) {
-                                    course = ""
-                                }
-                                collegeMenuExpanded = false
-                            },
-                        )
-                    }
-                }
-            }
-
-            val selected = selectedCollege
-            val validDomain = selected?.emailDomain
-                ?.let { email.lowercase().endsWith("@${it.lowercase()}") }
-                ?: false
-
-            if (!validDomain) {
-                OutlinedTextField(
-                    value = collegeCode,
-                    onValueChange = { collegeCode = it.uppercase().take(6) },
-                    label = { Text("College Code (Required if email domain doesn't match)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-
-            OutlinedTextField(
-                value = registrationNo,
-                onValueChange = { registrationNo = it },
-                label = { Text("Registration No / Roll No") },
-                leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Badge, null) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            val availableCourses = selectedCollege?.listedCourses.orEmpty()
-            if (availableCourses.isNotEmpty()) {
-                ExposedDropdownMenuBox(
-                    expanded = courseMenuExpanded,
-                    onExpandedChange = { courseMenuExpanded = !courseMenuExpanded },
-                ) {
-                    OutlinedTextField(
-                        value = course,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Course (Listed)") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = courseMenuExpanded)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
+                    Text(
+                        "Create Account", 
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    DropdownMenu(
-                        expanded = courseMenuExpanded,
-                        onDismissRequest = { courseMenuExpanded = false },
+                    
+                    Spacer(Modifier.height(4.dp))
+
+                    OutlinedTextField(
+                        value = fullName,
+                        onValueChange = { fullName = it },
+                        label = { Text("Full Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it.trim() },
+                        label = { Text("College Email / Email") },
+                        leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Email, null) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    ExposedDropdownMenuBox(
+                        expanded = collegeMenuExpanded,
+                        onExpandedChange = { collegeMenuExpanded = !collegeMenuExpanded },
                     ) {
-                        availableCourses.forEach { courseName ->
-                            DropdownMenuItem(
-                                text = { Text("${selectedCollege?.name} - $courseName") },
-                                onClick = {
-                                    course = courseName
-                                    courseMenuExpanded = false
-                                },
-                            )
+                        OutlinedTextField(
+                            value = selectedCollege?.name.orEmpty(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("College (Listed only)") },
+                            leadingIcon = { androidx.compose.material3.Icon(Icons.Default.School, null) },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = collegeMenuExpanded)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        DropdownMenu(
+                            expanded = collegeMenuExpanded,
+                            onDismissRequest = { collegeMenuExpanded = false },
+                        ) {
+                            colleges.forEach { college ->
+                                DropdownMenuItem(
+                                    text = { Text("${college.name} (${college.collegeCode})") },
+                                    onClick = {
+                                        selectedCollege = college
+                                        if (course.isNotBlank() && course !in college.listedCourses) {
+                                            course = ""
+                                        }
+                                        collegeMenuExpanded = false
+                                    },
+                                )
+                            }
                         }
                     }
-                }
-            } else {
-                OutlinedTextField(
-                    value = course,
-                    onValueChange = { course = it },
-                    label = { Text("Course (BTech / MTech / ... )") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
 
-            OutlinedTextField(
-                value = yearOfJoining,
-                onValueChange = { yearOfJoining = it.filter(Char::isDigit).take(4) },
-                label = { Text("Year of Joining") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            OutlinedTextField(
-                value = yearOfPassing,
-                onValueChange = { yearOfPassing = it.filter(Char::isDigit).take(4) },
-                label = { Text("Year of Passing") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone (optional)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Lock, null) },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Lock, null) },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            TextButton(
-                onClick = {
-                    val college = selectedCollege
-                    if (fullName.isBlank() || email.isBlank() || registrationNo.isBlank() || course.isBlank()
-                        || yearOfJoining.length != 4 || yearOfPassing.length != 4 || password.isBlank()
-                        || confirmPassword.isBlank() || college == null
-                    ) {
-                        scope.launch { snackbarHost.showSnackbar("Fill all required fields") }
-                        return@TextButton
-                    }
-
-                    if (password != confirmPassword) {
-                        scope.launch { snackbarHost.showSnackbar("Password and confirm password must match") }
-                        return@TextButton
-                    }
-
-                    val isDomainMatched = college.emailDomain
+                    val selected = selectedCollege
+                    val validDomain = selected?.emailDomain
                         ?.let { email.lowercase().endsWith("@${it.lowercase()}") }
                         ?: false
-                    if (!isDomainMatched && collegeCode.uppercase() != college.collegeCode.uppercase()) {
-                        scope.launch { snackbarHost.showSnackbar("Invalid college code for selected college") }
-                        return@TextButton
+
+                    if (!validDomain) {
+                        OutlinedTextField(
+                            value = collegeCode,
+                            onValueChange = { collegeCode = it.uppercase().take(6) },
+                            label = { Text("College Code (Required)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp)
+                        )
                     }
 
-                    val user = User(
-                        name = fullName.trim(),
-                        email = email.trim(),
-                        phone = phone.ifBlank { null },
-                        sic = registrationNo.trim(),
-                        registrationNo = registrationNo.trim(),
-                        course = course.trim(),
-                        yearOfJoining = yearOfJoining,
-                        yearOfPassing = yearOfPassing,
-                        collegeName = college.name,
-                        collegeId = college.id,
+                    OutlinedTextField(
+                        value = registrationNo,
+                        onValueChange = { registrationNo = it },
+                        label = { Text("Registration No / Roll No") },
+                        leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Badge, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
                     )
-                    authViewModel.signUp(user, password)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("Sign Up")
-                }
-            }
 
-            TextButton(onClick = { navController.navigate(NavigationItem.Login.route) }) {
-                Text("Already have an account? Log in")
+                    val availableCourses = selectedCollege?.listedCourses.orEmpty()
+                    if (availableCourses.isNotEmpty()) {
+                        ExposedDropdownMenuBox(
+                            expanded = courseMenuExpanded,
+                            onExpandedChange = { courseMenuExpanded = !courseMenuExpanded },
+                        ) {
+                            OutlinedTextField(
+                                value = course,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Course (Listed)") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = courseMenuExpanded)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            DropdownMenu(
+                                expanded = courseMenuExpanded,
+                                onDismissRequest = { courseMenuExpanded = false },
+                            ) {
+                                availableCourses.forEach { courseName ->
+                                    DropdownMenuItem(
+                                        text = { Text("${selectedCollege?.name} - $courseName") },
+                                        onClick = {
+                                            course = courseName
+                                            courseMenuExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = course,
+                            onValueChange = { course = it },
+                            label = { Text("Course (BTech / MTech / ... )") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = yearOfJoining,
+                        onValueChange = { yearOfJoining = it.filter(Char::isDigit).take(4) },
+                        label = { Text("Year of Joining") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = yearOfPassing,
+                        onValueChange = { yearOfPassing = it.filter(Char::isDigit).take(4) },
+                        label = { Text("Year of Passing") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("Phone (optional)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Lock, null) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirm Password") },
+                        leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Lock, null) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    ClayButton(
+                        text = "Sign Up",
+                        onClick = {
+                            val college = selectedCollege
+                            if (fullName.isBlank() || email.isBlank() || registrationNo.isBlank() || course.isBlank()
+                                || yearOfJoining.length != 4 || yearOfPassing.length != 4 || password.isBlank()
+                                || confirmPassword.isBlank() || college == null
+                            ) {
+                                scope.launch { snackbarHost.showSnackbar("Fill all required fields") }
+                                return@ClayButton
+                            }
+
+                            if (password != confirmPassword) {
+                                scope.launch { snackbarHost.showSnackbar("Password and confirm password must match") }
+                                return@ClayButton
+                            }
+
+                            val isDomainMatched = college.emailDomain
+                                ?.let { email.lowercase().endsWith("@${it.lowercase()}") }
+                                ?: false
+                            if (!isDomainMatched && collegeCode.uppercase() != college.collegeCode.uppercase()) {
+                                scope.launch { snackbarHost.showSnackbar("Invalid college code for selected college") }
+                                return@ClayButton
+                            }
+
+                            val user = User(
+                                name = fullName.trim(),
+                                email = email.trim(),
+                                phone = phone.ifBlank { null },
+                                sic = registrationNo.trim(),
+                                registrationNo = registrationNo.trim(),
+                                course = course.trim(),
+                                yearOfJoining = yearOfJoining,
+                                yearOfPassing = yearOfPassing,
+                                collegeName = college.name,
+                                collegeId = college.id,
+                            )
+                            authViewModel.signUp(user, password)
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp)
+                    )
+
+                    TextButton(onClick = { navController.navigate(NavigationItem.Login.route) }) {
+                        Text("Already have an account? Log in")
+                    }
+                }
             }
         }
     }

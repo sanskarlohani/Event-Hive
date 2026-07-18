@@ -76,12 +76,24 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read, write: if request.auth.uid == uid;
-      allow read: if isSuperAdmin()
-        || isStudentGuide(
-          get(/databases/$(database)/documents/users/$(uid)).data.collegeId
-        );
-      allow update: if isSuperAdmin();
+      // Allow users to read their own profile
+      // SuperAdmins and StudentGuides (for their college) can also read
+      allow read: if request.auth.uid == uid
+        || isSuperAdmin()
+        || isStudentGuide(get(/databases/$(database)/documents/users/$(uid)).data.collegeId);
+
+      // Users can create their own document on signup
+      allow create: if request.auth.uid == uid;
+
+      // CRITICAL: Prevent users from self-assigning roles or permissions
+      // They can only update non-sensitive fields (name, phone, etc.)
+      allow update: if (request.auth.uid == uid &&
+          !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['systemRole', 'effectivePermissions', 'customRoleIds', 'collegeId']))
+        || isSuperAdmin();
+
+      // Only SuperAdmin can delete users
+      allow delete: if isSuperAdmin();
     }
 
     match /Categories/{categoryId} {

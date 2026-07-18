@@ -39,14 +39,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.sanskar.eventhive.R
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.data.model.EventMode
 import com.sanskar.eventhive.data.model.Team
 import com.sanskar.eventhive.data.model.Ticket
+import com.sanskar.eventhive.ui.components.ClayButton
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.viewModel.EventViewModel
 import com.sanskar.eventhive.ui.viewModel.TicketViewModel
 import com.sanskar.eventhive.ui.viewModel.UserViewModel
@@ -90,13 +97,15 @@ fun EventRegistrationScreen(
     val currentUser = (currentUserRes as? Resource.Success)?.data
 
     // 2) Local UI state
+    val individualLabel = stringResource(R.string.registration_individual)
+    val groupLabel = stringResource(R.string.registration_group)
     var participation by remember {
         mutableStateOf(
             when (event?.mode) {
-                EventMode.SINGLE -> "Individual"
-                EventMode.GROUP -> "Group"
-                EventMode.BOTH -> "Group"
-                else -> "Individual"
+                EventMode.SINGLE -> individualLabel
+                EventMode.GROUP -> groupLabel
+                EventMode.BOTH -> groupLabel
+                else -> individualLabel
             }
         )
     }
@@ -104,7 +113,7 @@ fun EventRegistrationScreen(
         when (event?.mode) {
             EventMode.GROUP -> true
             EventMode.SINGLE -> false
-            EventMode.BOTH -> participation == "Group"
+            EventMode.BOTH -> participation == groupLabel
             else -> false
         }
     }
@@ -120,30 +129,30 @@ fun EventRegistrationScreen(
         .apply { event?.additionalInfoAskFromUser?.forEach { putIfAbsent(it.key, "") } }
 
     // Dialog controls
-    var showMemberDialog by remember { mutableStateOf(false) }
+    var showMemberDialog by remember { mutableStateOf(value = false) }
     var searchQuery by remember { mutableStateOf("") }
     val candidates by ticketViewModel.membersNotRegistered.collectAsStateWithLifecycle(emptyList())
     val selectedIds = remember { mutableStateListOf<String>() }
-    val selectedMemberCount = memberIds.count { it.isNotBlank() && it != userId }
+    val selectedMemberCount = memberIds.count { it.isNotBlank() && (it != userId) }
     val totalParticipantCount = 1 + selectedMemberCount
     val minAllowed = (event?.minTeamSize ?: 1).coerceAtLeast(1)
     val maxAllowed = (event?.maxTeamSize ?: Int.MAX_VALUE).coerceAtLeast(minAllowed)
-    val groupSizeValid = !isGroupRegistration || totalParticipantCount in minAllowed..maxAllowed
+    val groupSizeValid = !isGroupRegistration || (totalParticipantCount in minAllowed..maxAllowed)
     val requiredAnswersMissing = event?.additionalInfoAskFromUser
-        ?.any { it.required && extraAnswers[it.key].isNullOrBlank() } == true
+        ?.any { it.required && (extraAnswers[it.key].isNullOrBlank()) } == true
     val canSubmit = !requiredAnswersMissing &&
         (!isGroupRegistration || teamName.isNotBlank()) &&
         groupSizeValid
 
     // Fetch candidates when dialog opens
     LaunchedEffect(showMemberDialog) {
-        if (showMemberDialog && event != null) {
+        if (showMemberDialog && (event != null)) {
             ticketViewModel.getMembersNotRegistered(
                 categoryId,
                 clubId,
                 eventId,
                 event!!.participantsIds,
-                userId
+                userId,
             )
             selectedIds.clear()
         }
@@ -168,16 +177,16 @@ fun EventRegistrationScreen(
         }
 
         // Participation section
-        SectionCard(title = "Participation") {
+        SectionCard(title = stringResource(R.string.registration_participation)) {
             if (event?.mode == EventMode.BOTH) {
                 SegmentedControl(
-                    options = listOf("Individual", "Group"),
+                    options = listOf(individualLabel, groupLabel),
                     selected = participation,
-                    onSelect = { participation = it }
+                    onSelect = { participation = it },
                 )
             } else {
                 Text(
-                    text = if (event?.mode == EventMode.SINGLE) "Individual" else "Group",
+                    text = if (event?.mode == EventMode.SINGLE) individualLabel else groupLabel,
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -185,18 +194,18 @@ fun EventRegistrationScreen(
 
         // Team details
         if (isGroupRegistration) {
-            SectionCard(title = "Team Details") {
+            SectionCard(title = stringResource(R.string.registration_team_details)) {
                 OutlinedTextField(
                     value = teamName,
                     onValueChange = { teamName = it },
-                    label = { Text("Team Name") },
+                    label = { Text(stringResource(R.string.registration_team_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = { showMemberDialog = true }) {
                     val maxTeamSize = (event?.maxTeamSize ?: 1).coerceAtLeast(1)
                     val maxOthers = (maxTeamSize - 1).coerceAtLeast(0)
-                    Text("Select Members (${memberIds.filter { it.isNotBlank() }.size}/$maxOthers)")
+                    Text(stringResource(R.string.registration_select_members, memberIds.filter { it.isNotBlank() }.size, maxOthers))
                 }
                 Spacer(Modifier.height(8.dp))
                 memberIds.forEach { id ->
@@ -208,14 +217,15 @@ fun EventRegistrationScreen(
 
         // Additional-info fields
         if (!event?.additionalInfoAskFromUser.isNullOrEmpty()) {
-            SectionCard(title = "Additional Information") {
+            SectionCard(title = stringResource(R.string.registration_additional_info)) {
                 event!!.additionalInfoAskFromUser.forEach { info ->
                     OutlinedTextField(
                         value = extraAnswers[info.key]!!,
                         onValueChange = { extraAnswers[info.key] = it },
                         label = { Text(info.key) },
                         isError = info.required && extraAnswers[info.key]?.isBlank() == true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
                     )
                     Spacer(Modifier.height(12.dp))
                 }
@@ -223,7 +233,8 @@ fun EventRegistrationScreen(
         }
 
         // Submit button
-        Button(
+        ClayButton(
+            text = stringResource(R.string.registration_register),
             onClick = {
                 val id = UUID.randomUUID().toString()
                 val selectedMembers = if (isGroupRegistration) {
@@ -232,7 +243,7 @@ fun EventRegistrationScreen(
                     emptyList()
                 }
                 val participantIds = (listOf(userId) + selectedMembers).distinct()
-                val memberNameMap = buildMap<String, String> {
+                val memberNameMap = buildMap {
                     currentUser?.name?.takeIf { it.isNotBlank() }?.let { put(userId, it) }
                     candidates.forEach { candidate ->
                         if (candidate.name.isNotBlank()) {
@@ -277,24 +288,22 @@ fun EventRegistrationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp)
-        ) {
-            Text("Register", style = MaterialTheme.typography.labelLarge)
-        }
+                .height(56.dp)
+                .semantics { contentDescription = "Submit registration for ${event?.title}" }
+        )
     }
 
     // Member-selection dialog
     if (showMemberDialog) {
         AlertDialog(
             onDismissRequest = { showMemberDialog = false },
-            title = { Text("Select Members") },
+            title = { Text(stringResource(R.string.registration_select_members_title)) },
             text = {
                 Column {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        label = { Text("Search by name/branch/year") },
+                        label = { Text(stringResource(R.string.registration_search_hint)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(8.dp))
@@ -349,12 +358,12 @@ fun EventRegistrationScreen(
                     },
                     enabled = selectedIds.size in minSize..maxSize
                 ) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showMemberDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -374,17 +383,17 @@ private fun SectionCard(
     title: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+    ClayCard(
+        cornerRadius = 20.dp,
+        elevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(4.dp)) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.height(8.dp))
@@ -425,14 +434,20 @@ private fun SegmentedControl(
 @Composable
 private fun FullScreenLoading() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(
+            modifier = Modifier.semantics { contentDescription = "Loading registration content" }
+        )
     }
 }
 
 @Composable
 private fun FullScreenError(e: Throwable?) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(e?.localizedMessage ?: "Error", color = MaterialTheme.colorScheme.error)
+        Text(
+            text = e?.localizedMessage ?: stringResource(R.string.common_error),
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.semantics { contentDescription = "Error: ${e?.localizedMessage}" }
+        )
     }
 }
 

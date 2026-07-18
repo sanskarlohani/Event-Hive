@@ -67,6 +67,10 @@ class TicketViewModel @Inject constructor(
     private var userTicketsJob: Job? = null
 
     fun getUserTickets(userId: String) {
+        if (userId.isBlank()) {
+            _userTickets.value = emptyList()
+            return
+        }
         userTicketsJob?.cancel()
         userTicketsJob = viewModelScope.launch {
             repo.getAllTicketsForUser(userId).collect { list ->

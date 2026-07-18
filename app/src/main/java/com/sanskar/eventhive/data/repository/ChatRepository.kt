@@ -12,9 +12,12 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -170,49 +173,66 @@ class ChatRepository @Inject constructor(
         }
 
         val accessRef = database.reference.child("chatAccess").child(uid)
-        var roomListener: ValueEventListener? = null
-
-        roomListener = object : ValueEventListener {
+        
+        val roomListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val roomIds = snapshot.children.mapNotNull { it.key }.distinct()
+                android.util.Log.d("ChatRepository", "User $uid has room access: $roomIds")
                 if (roomIds.isEmpty()) {
                     trySend(emptyList()).isSuccess
                     return
                 }
 
-                val previews = mutableListOf<ChatRoomPreview>()
-                snapshot.ref.root.child("chats").get().addOnSuccessListener { chatsRoot ->
-                    for (roomId in roomIds) {
-                        val metadataSnap = chatsRoot.child(roomId).child("metadata")
-                        val messagesSnap = chatsRoot.child(roomId).child("messages")
-                        val last = messagesSnap.children.maxByOrNull {
-                            it.child("timestamp").getValue(Long::class.java) ?: 0L
-                        }
-                        val type = metadataSnap.child("type").getValue(String::class.java).orEmpty()
-                        val relatedId = metadataSnap.child("relatedId").getValue(String::class.java).orEmpty()
-                        val readOnly = metadataSnap.child("readOnly").getValue(Boolean::class.java) ?: false
-                        val timestamp = last?.child("timestamp")?.getValue(Long::class.java) ?: 0L
-                        val message = last?.child("text")?.getValue(String::class.java).orEmpty()
-                        previews += ChatRoomPreview(
-                            id = roomId,
-                            roomId = roomId,
-                            type = type,
-                            name = when (type) {
-                                "anonymous" -> "Anonymous"
-                                "dm" -> "Direct Message"
-                                "club" -> "Club Chat"
-                                "event" -> "Event Chat"
-                                else -> roomId
-                            },
-                            relatedId = relatedId,
-                            readOnly = readOnly,
-                            lastMessage = message,
-                            timestamp = timestamp,
-                        )
+                // Launch a coroutine to fetch previews in parallel
+                this@callbackFlow.launch {
+                    try {
+                        val previews = roomIds.map { roomId ->
+                            async {
+                                val roomRef = database.reference.child("chats").child(roomId)
+                                val metadataSnap = roomRef.child("metadata").get().await()
+                                
+                                if (!metadataSnap.exists()) {
+                                    android.util.Log.w("ChatRepository", "Metadata missing for room $roomId")
+                                    return@async null
+                                }
+
+                                val lastMsgSnap = roomRef.child("messages")
+                                    .orderByChild("timestamp")
+                                    .limitToLast(1)
+                                    .get()
+                                    .await()
+
+                                val last = lastMsgSnap.children.firstOrNull()
+                                val type = metadataSnap.child("type").getValue(String::class.java).orEmpty()
+                                val relatedId = metadataSnap.child("relatedId").getValue(String::class.java).orEmpty()
+                                val readOnly = metadataSnap.child("readOnly").getValue(Boolean::class.java) ?: false
+                                val timestamp = last?.child("timestamp")?.getValue(Long::class.java) ?: 0L
+                                val message = last?.child("text")?.getValue(String::class.java).orEmpty()
+                                
+                                ChatRoomPreview(
+                                    id = roomId,
+                                    roomId = roomId,
+                                    type = type,
+                                    name = when (type) {
+                                        "anonymous" -> "Anonymous"
+                                        "dm" -> "Direct Message"
+                                        "club" -> "Club Chat"
+                                        "event" -> "Event Chat"
+                                        else -> roomId
+                                    },
+                                    relatedId = relatedId,
+                                    readOnly = readOnly,
+                                    lastMessage = message,
+                                    timestamp = timestamp,
+                                )
+                            }
+                        }.awaitAll().filterNotNull()
+                        
+                        trySend(previews.sortedByDescending { it.timestamp }).isSuccess
+                    } catch (e: Exception) {
+                        // In case of any error (e.g. permission denied), send an empty list or close with error
+                        close(e)
                     }
-                    trySend(previews.sortedByDescending { it.timestamp }).isSuccess
-                }.addOnFailureListener { error ->
-                    close(error)
                 }
             }
 
@@ -222,9 +242,7 @@ class ChatRepository @Inject constructor(
         }
 
         accessRef.addValueEventListener(roomListener)
-        awaitClose {
-            roomListener?.let { accessRef.removeEventListener(it) }
-        }
+        awaitClose { accessRef.removeEventListener(roomListener) }
     }
 
     suspend fun getAnonAlias(collegeId: String): String {

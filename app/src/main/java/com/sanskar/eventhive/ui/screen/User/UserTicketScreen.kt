@@ -1,5 +1,6 @@
 package com.sanskar.eventhive.ui.screen.User
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +39,7 @@ import androidx.navigation.NavController
 import com.sanskar.eventhive.data.model.Ticket
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.settings.formatTimestamp
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.navigation.NavigationItem
 import com.sanskar.eventhive.ui.viewModel.TicketViewModel
 import com.sanskar.eventhive.ui.viewModel.UserViewModel
@@ -52,14 +55,20 @@ fun UserTicketScreen(
     val tickets by ticketViewModel.userTickets.collectAsStateWithLifecycle()
     val userResource by userViewModel.observeUser.collectAsStateWithLifecycle(initialValue = Resource.Loading)
     val currentUserId = remember(userId, userResource) {
-        if (userId.isNotBlank()) userId
-        else (userResource as? Resource.Success)?.data?.userId.orEmpty()
+        userId.ifBlank { (userResource as? Resource.Success)?.data?.userId.orEmpty() }
     }
     val userOwnedTickets = remember(tickets, currentUserId) {
-        if (currentUserId.isBlank()) emptyList()
-        else tickets.filter { ticket ->
-            ticket.userId == currentUserId || ticket.participantIds.contains(currentUserId)
-        }.sortedByDescending { it.issuedAt }
+        if (currentUserId.isBlank()) {
+            emptyList()
+        } else {
+            tickets.asSequence()
+                .filter { ticket ->
+                    (ticket.userId == currentUserId && ticket.userId.isNotBlank()) || 
+                    (ticket.participantIds.contains(currentUserId) && currentUserId.isNotBlank())
+                }
+                .sortedByDescending { it.issuedAt }
+                .toList()
+        }
     }
 
     LaunchedEffect(currentUserId) {
@@ -70,12 +79,16 @@ fun UserTicketScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("My Tickets") }, navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            })
-        }) { paddingValues ->
+            TopAppBar(
+                title = { Text("My Tickets") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+            )
+        },
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -112,35 +125,47 @@ fun UserTicketScreen(
 
 @Composable
 fun TicketCard(ticket: Ticket, onClick: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+    ClayCard(
+        cornerRadius = 24.dp,
+        elevation = 8.dp,
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(4.dp)) {
             Text(
                 text = ticket.eventId.ifEmpty { "Event" },
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.primary
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = formatTimestamp(ticket.issuedAt),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.SpaceBetween, 
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = ticket.status.name,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                
                 Text(
-                    text = ticket.status.name, fontSize = 14.sp, fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = "Seat: ${ticket.categoryId}",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    text = "ID: ${ticket.ticketId.take(8).uppercase()}",
+                    style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.outline
                 )
             }
         }
