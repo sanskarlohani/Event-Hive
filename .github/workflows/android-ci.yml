@@ -1,0 +1,72 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Create google-services.json
+      # We create a dummy file because the Google Services plugin checks for its existence
+      # even during unit tests. For actual builds, you should use a GitHub Secret.
+      run: |
+        echo '{
+          "project_info": { "project_number": "123", "project_id": "dummy", "storage_bucket": "dummy" },
+          "client": [ { "client_info": { "mobilesdk_app_id": "1:123:android:abc", "android_client_info": { "package_name": "com.sanskar.eventhive" } }, "api_key": [ { "current_key": "dummy" } ], "services": { "appinvite_service": { "other_platform_oauth_client": [] } } } ],
+          "configuration_version": "1"
+        }' > app/google-services.json
+
+    - name: Run Unit Tests
+      run: ./gradlew :app:testDebugUnitTest
+
+    - name: Upload Test Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-report
+        path: app/build/reports/tests/testDebugUnitTest/
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Create google-services.json
+      run: |
+        echo '{
+          "project_info": { "project_number": "123", "project_id": "dummy", "storage_bucket": "dummy" },
+          "client": [ { "client_info": { "mobilesdk_app_id": "1:123:android:abc", "android_client_info": { "package_name": "com.sanskar.eventhive" } }, "api_key": [ { "current_key": "dummy" } ], "services": { "appinvite_service": { "other_platform_oauth_client": [] } } } ],
+          "configuration_version": "1"
+        }' > app/google-services.json
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
