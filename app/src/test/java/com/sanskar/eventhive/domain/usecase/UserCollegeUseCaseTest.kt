@@ -2,6 +2,7 @@ package com.sanskar.eventhive.domain.usecase
 
 import com.sanskar.eventhive.data.model.College
 import com.sanskar.eventhive.data.repository.CollegeRepository
+import com.sanskar.eventhive.data.repository.ChatRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.mockk.coEvery
@@ -17,6 +18,7 @@ class UserCollegeUseCaseTest {
     private lateinit var auth: FirebaseAuth
     private lateinit var firebaseUser: FirebaseUser
     private lateinit var collegeRepository: CollegeRepository
+    private lateinit var chatRepository: ChatRepository
     private lateinit var userCollegeUseCase: UserCollegeUseCase
 
     @Before
@@ -24,11 +26,13 @@ class UserCollegeUseCaseTest {
         auth = mockk()
         firebaseUser = mockk()
         collegeRepository = mockk()
-        userCollegeUseCase = UserCollegeUseCase(auth, collegeRepository)
+        chatRepository = mockk()
+        userCollegeUseCase = UserCollegeUseCase(auth, collegeRepository, chatRepository)
 
         every { auth.currentUser } returns firebaseUser
         every { firebaseUser.uid } returns "u1"
         every { firebaseUser.email } returns "user@college.edu"
+        coEvery { chatRepository.grantAccess(any(), any(), any(), any(), any(), any()) } returns Unit
     }
 
     @Test

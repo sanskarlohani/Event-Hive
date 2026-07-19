@@ -1,6 +1,7 @@
 package com.sanskar.eventhive.domain
 
 import com.sanskar.eventhive.data.Resource
+import com.sanskar.eventhive.data.repository.ChatRepository
 import com.sanskar.eventhive.data.repository.Inteface.EventRepository
 import com.sanskar.eventhive.data.repository.Inteface.TicketRepository
 import com.sanskar.eventhive.data.repository.Inteface.UserRepository
@@ -17,6 +18,7 @@ class CancelTicketUseCaseTest {
     private lateinit var ticketRepository: TicketRepository
     private lateinit var eventRepository: EventRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var chatRepository: ChatRepository
     private lateinit var cancelTicketUseCase: CancelTicketUseCase
 
     @Before
@@ -24,7 +26,8 @@ class CancelTicketUseCaseTest {
         ticketRepository = mockk()
         eventRepository = mockk()
         userRepository = mockk()
-        cancelTicketUseCase = CancelTicketUseCase(ticketRepository, eventRepository, userRepository)
+        chatRepository = mockk()
+        cancelTicketUseCase = CancelTicketUseCase(ticketRepository, eventRepository, userRepository, chatRepository)
     }
 
     @Test
@@ -41,6 +44,7 @@ class CancelTicketUseCaseTest {
         coEvery { ticketRepository.cancelTicket(any()) } returns Resource.Success(Unit)
         coEvery { eventRepository.cancelTicketInEvent(any(), any(), any(), any(), any(), any()) } returns Resource.Success(Unit)
         coEvery { userRepository.cancelTicketForUser(any(), any()) } returns Resource.Success(Unit)
+        coEvery { chatRepository.removeAccess(any()) } returns Unit
 
         // Act
         val result = cancelTicketUseCase(categoryId, clubId, eventId, ticketId, teamId, userId, participantIds)
@@ -50,6 +54,7 @@ class CancelTicketUseCaseTest {
         coVerify(exactly = 1) { ticketRepository.cancelTicket(ticketId) }
         coVerify(exactly = 1) { eventRepository.cancelTicketInEvent(categoryId, clubId, eventId, ticketId, teamId, participantIds) }
         coVerify(exactly = 1) { userRepository.cancelTicketForUser(userId, ticketId) }
+        coVerify(exactly = 1) { chatRepository.removeAccess("event_$eventId") }
     }
 
     @Test

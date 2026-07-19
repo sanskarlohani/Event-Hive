@@ -4,6 +4,7 @@ import android.util.Log
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.data.model.Team
 import com.sanskar.eventhive.data.model.Ticket
+import com.sanskar.eventhive.data.repository.ChatRepository
 import com.sanskar.eventhive.data.repository.Inteface.EventRepository
 import com.sanskar.eventhive.data.repository.Inteface.TicketRepository
 import com.sanskar.eventhive.data.repository.Inteface.UserRepository
@@ -22,6 +23,7 @@ class IssueTicketUseCaseTest {
     private lateinit var ticketRepository: TicketRepository
     private lateinit var eventRepository: EventRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var chatRepository: ChatRepository
     private lateinit var issueTicketUseCase: IssueTicketUseCase
 
     @Before
@@ -33,7 +35,8 @@ class IssueTicketUseCaseTest {
         ticketRepository = mockk()
         eventRepository = mockk()
         userRepository = mockk()
-        issueTicketUseCase = IssueTicketUseCase(ticketRepository, eventRepository, userRepository)
+        chatRepository = mockk()
+        issueTicketUseCase = IssueTicketUseCase(ticketRepository, eventRepository, userRepository, chatRepository)
     }
 
     @Test
@@ -45,6 +48,7 @@ class IssueTicketUseCaseTest {
         coEvery { ticketRepository.issueTicket(any(), any()) } returns Resource.Success(Unit)
         coEvery { eventRepository.saveTicketInEvent(any(), any(), any(), any(), any(), any()) } returns Resource.Success(Unit)
         coEvery { userRepository.issueTicketForUser(any(), any(), any(), any(), any()) } returns Resource.Success(Unit)
+        coEvery { chatRepository.grantAccess(any(), any(), any(), any(), any()) } returns Unit
 
         // Act
         val result = issueTicketUseCase(ticket, team)
@@ -54,6 +58,7 @@ class IssueTicketUseCaseTest {
         coVerify(exactly = 1) { ticketRepository.issueTicket(ticket, team) }
         coVerify(exactly = 1) { eventRepository.saveTicketInEvent("c1", "cl1", "e1", "t1", "tm1", listOf("u1")) }
         coVerify(exactly = 1) { userRepository.issueTicketForUser("u1", "c1", "cl1", "e1", "t1") }
+        coVerify(exactly = 1) { chatRepository.grantAccess("event_e1", "event", "e1", "c1", "cl1") }
     }
 
     @Test

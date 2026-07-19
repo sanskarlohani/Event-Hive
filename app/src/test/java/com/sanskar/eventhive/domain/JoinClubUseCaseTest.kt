@@ -1,6 +1,7 @@
 package com.sanskar.eventhive.domain
 
 import com.sanskar.eventhive.data.Resource
+import com.sanskar.eventhive.data.repository.ChatRepository
 import com.sanskar.eventhive.data.repository.Inteface.ClubRepository
 import com.sanskar.eventhive.data.repository.Inteface.UserRepository
 import io.mockk.coEvery
@@ -15,13 +16,15 @@ class JoinClubUseCaseTest {
 
     private lateinit var clubRepository: ClubRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var chatRepository: ChatRepository
     private lateinit var joinClubUseCase: JoinClubUseCase
 
     @Before
     fun setUp() {
         clubRepository = mockk()
         userRepository = mockk()
-        joinClubUseCase = JoinClubUseCase(userRepository, clubRepository)
+        chatRepository = mockk()
+        joinClubUseCase = JoinClubUseCase(userRepository, clubRepository, chatRepository)
     }
 
     @Test
@@ -32,6 +35,7 @@ class JoinClubUseCaseTest {
         val userId = "user1"
         coEvery { clubRepository.joinClub(categoryId, clubId, userId) } returns Resource.Success(Unit)
         coEvery { userRepository.joinClubForUser(userId, categoryId, clubId) } returns Resource.Success(Unit)
+        coEvery { chatRepository.grantAccess(any(), any(), any(), any()) } returns Unit
 
         // Act
         val result = joinClubUseCase(categoryId, clubId, userId)
@@ -40,6 +44,7 @@ class JoinClubUseCaseTest {
         assertEquals(Resource.Success(Unit), result)
         coVerify(exactly = 1) { clubRepository.joinClub(categoryId, clubId, userId) }
         coVerify(exactly = 1) { userRepository.joinClubForUser(userId, categoryId, clubId) }
+        coVerify(exactly = 1) { chatRepository.grantAccess("club_club1", "club", "club1", "cat1") }
     }
 
     @Test
