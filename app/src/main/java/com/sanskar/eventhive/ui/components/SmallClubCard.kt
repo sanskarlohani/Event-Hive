@@ -25,7 +25,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.sanskar.eventhive.data.model.Club
 
@@ -66,23 +65,16 @@ fun SmallClubCard(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                if (!club.logoUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = club.logoUrl,
-                        contentDescription = club.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
-                } else {
-                    Text(
-                        text = club.name.take(2).uppercase(),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                AsyncImage(
+                    model = club.logoUrl,
+                    contentDescription = club.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    error = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground),
+                    placeholder = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground)
+                )
             }
 
             Spacer(Modifier.width(16.dp))

@@ -45,8 +45,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirestore(): FirebaseFirestore =
-        FirebaseFirestore.getInstance()
+    fun provideFirestore(): FirebaseFirestore {
+        val firestore = FirebaseFirestore.getInstance()
+        // Firestore has offline persistence enabled by default on Android,
+        // but we can ensure the settings are optimized if needed.
+        return firestore
+    }
 
     @Provides
     @Singleton
@@ -61,8 +65,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseDatabase(): FirebaseDatabase = 
-        FirebaseDatabase.getInstance("https://sit-event-default-rtdb.firebaseio.com/")
+    fun provideFirebaseDatabase(): FirebaseDatabase {
+        val db = FirebaseDatabase.getInstance("https://sit-event-default-rtdb.firebaseio.com/")
+        try {
+            db.setPersistenceEnabled(true)
+        } catch (e: Exception) {
+            // Persistence must be set before any other usage of the database instance.
+            // If it fails (e.g. during Hot Reload), we just continue.
+        }
+        return db
+    }
 
     @Provides
     fun provideContext(application: Application): Context {

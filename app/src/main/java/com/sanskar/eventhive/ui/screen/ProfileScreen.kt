@@ -374,7 +374,7 @@ private fun ProfileHeroCard(
             ClayButton(
                 text = "Edit Profile",
                 onClick = onEditProfile,
-                backgroundColor = Color.White.copy(alpha = 0.25f),
+                backgroundColor = Color.White.copy(alpha = 0.2f),
                 textColor = Color.White,
                 cornerRadius = 20.dp,
                 icon = {
@@ -543,8 +543,8 @@ private fun ThemeSelector(
                     onClick = { onThemeClick(option) },
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                        contentColor = if (selected) Color.White else MaterialTheme.colorScheme.primary
+                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Text(option)

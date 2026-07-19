@@ -4,39 +4,67 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.sanskar.eventhive.data.Resource
+import com.sanskar.eventhive.data.model.Category
 import com.sanskar.eventhive.data.model.Club
 import com.sanskar.eventhive.data.model.ClubRole
 import com.sanskar.eventhive.data.model.ClubUser
-import com.sanskar.eventhive.data.model.Category
-import com.sanskar.eventhive.ui.navigation.NavigationItem
+import com.sanskar.eventhive.ui.components.ClayButton
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.permissions.canCreateClub
-import com.sanskar.eventhive.ui.permissions.canManageCategories
 import com.sanskar.eventhive.ui.viewModel.ClubCategoryViewModel
 import com.sanskar.eventhive.ui.viewModel.ClubViewModel
 import com.sanskar.eventhive.ui.viewModel.UserViewModel
@@ -50,7 +78,7 @@ fun CreateClubScreen(
     navController: NavController,
     clubViewModel: ClubViewModel = hiltViewModel(),
     categoryViewModel: ClubCategoryViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
 ) {
     val selectCategoryToken = "__select_category__"
     val context = LocalContext.current
@@ -60,13 +88,12 @@ fun CreateClubScreen(
     val currentUserRes by userViewModel.observeUser.collectAsStateWithLifecycle(initialValue = Resource.Loading)
     val currentUser = (currentUserRes as? Resource.Success)?.data
     val canCreateClubAccess = canCreateClub(currentUser)
-    val canManageCategoriesAccess = canManageCategories(currentUser)
-    val requiresCategorySelection = categoryId == selectCategoryToken || categoryId.isBlank()
+    val requiresCategorySelection = (categoryId == selectCategoryToken) || categoryId.isBlank()
 
     // State
     var clubName by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var isPublic by remember { mutableStateOf(true) }
+    var isPublic by remember { mutableStateOf(value = true) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
     var selectedCategoryName by remember {
         mutableStateOf(
@@ -86,7 +113,6 @@ fun CreateClubScreen(
     val bannerPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         bannerUri = uri
     }
-
 
     // Operation result
     val operationStatus by clubViewModel.operationStatus.collectAsStateWithLifecycle(null)
@@ -111,200 +137,245 @@ fun CreateClubScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Column {
-                        Text("CREATE NEW CLUB", color = colors.primary, fontSize = 20.sp)
-                        Text("Let's bring your community to life", color = colors.onSurfaceVariant, fontSize = 14.sp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Create Club", 
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                            color = colors.primary
+                        )
+                        Text(
+                            "Build your own community", 
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = colors.primary)
                     }
                 },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         },
         containerColor = colors.background
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .imePadding()
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (requiresCategorySelection) {
-                OutlinedTextField(
-                    value = customDefaultCategoryOne,
-                    onValueChange = { customDefaultCategoryOne = it },
-                    label = { Text("Custom Category 1 (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = customDefaultCategoryTwo,
-                    onValueChange = { customDefaultCategoryTwo = it },
-                    label = { Text("Custom Category 2 (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-                ExposedDropdownMenuBox(
-                    expanded = categoryMenuExpanded,
-                    onExpandedChange = { categoryMenuExpanded = !categoryMenuExpanded },
-                ) {
-                    OutlinedTextField(
-                        value = selectedCategoryName,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Choose Category") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
+                .padding(padding)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            colors.primary.copy(alpha = 0.05f),
+                            colors.background,
+                            colors.secondary.copy(alpha = 0.1f)
+                        )
                     )
-                    DropdownMenu(
-                        expanded = categoryMenuExpanded,
-                        onDismissRequest = { categoryMenuExpanded = false },
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                ClayCard(
+                    cornerRadius = 24.dp,
+                    elevation = 10.dp,
+                    backgroundColor = colors.surface
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        defaultCategoryChoices.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    selectedCategoryName = option
-                                    categoryMenuExpanded = false
-                                },
+                        Text(
+                            "Basic Details", 
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = colors.primary
+                        )
+                        
+                        OutlinedTextField(
+                            value = clubName,
+                            onValueChange = { clubName = it },
+                            label = { Text("Club Name") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("Description (optional)") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            maxLines = 4,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Public Club", fontWeight = FontWeight.Bold)
+                                Text("Anyone can find and join", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = isPublic,
+                                onCheckedChange = { isPublic = it },
+                                colors = SwitchDefaults.colors(checkedThumbColor = colors.primary)
                             )
                         }
                     }
                 }
-                if (canManageCategoriesAccess) {
-                    TextButton(onClick = { navController.navigate(NavigationItem.CreateCategory.route) }) {
-                        Text("Create your own category")
+
+                if (requiresCategorySelection) {
+                    ClayCard(
+                        cornerRadius = 24.dp,
+                        elevation = 8.dp,
+                        backgroundColor = colors.surface
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                "Category Selection", 
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = colors.primary
+                            )
+                            
+                            ExposedDropdownMenuBox(
+                                expanded = categoryMenuExpanded,
+                                onExpandedChange = { categoryMenuExpanded = !categoryMenuExpanded },
+                            ) {
+                                OutlinedTextField(
+                                    value = selectedCategoryName,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Choose Category") },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                DropdownMenu(
+                                    expanded = categoryMenuExpanded,
+                                    onDismissRequest = { categoryMenuExpanded = false },
+                                ) {
+                                    defaultCategoryChoices.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option) },
+                                            onClick = {
+                                                selectedCategoryName = option
+                                                categoryMenuExpanded = false
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            OutlinedTextField(
+                                value = customDefaultCategoryOne,
+                                onValueChange = { customDefaultCategoryOne = it },
+                                label = { Text("Add Custom Suggestion") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            OutlinedTextField(
-                value = clubName,
-                onValueChange = { clubName = it },
-                label = { Text("Club Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = colors.primary,
-                    unfocusedIndicatorColor = colors.onSurfaceVariant,
-                    cursorColor = colors.primary,
-                    focusedLabelColor = colors.primary,
-                    unfocusedLabelColor = colors.onSurfaceVariant
-                )
-            )
+                Text("Club Branding", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Logo Box
+                    Box(modifier = Modifier.weight(1f)) {
+                        ClayCard(
+                            cornerRadius = 20.dp,
+                            elevation = 6.dp,
+                            backgroundColor = colors.surface,
+                            onClick = { logoPicker.launch("image/*") }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(100.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (logoUri != null) {
+                                    AsyncImage(
+                                        model = logoUri,
+                                        contentDescription = "Logo",
+                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                } else {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.CloudUpload, contentDescription = null, tint = colors.primary)
+                                        Text("Logo", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description (optional)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                maxLines = 4,
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = colors.primary,
-                    unfocusedIndicatorColor = colors.onSurfaceVariant,
-                    cursorColor = colors.primary,
-                    focusedLabelColor = colors.primary,
-                    unfocusedLabelColor = colors.onSurfaceVariant
-                )
-            )
-
-            Text("Upload Club Logo")
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .border(1.dp, colors.primary, RoundedCornerShape(8.dp))
-                    .clickable { logoPicker.launch("image/*") },
-                contentAlignment = Alignment.Center
-            ) {
-                if (logoUri != null) {
-                    AsyncImage(
-                        model = logoUri,
-                        contentDescription = "Club Logo",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(32.dp), tint = colors.onSurfaceVariant)
-                        Text("Upload Logo", textAlign = TextAlign.Center, color = colors.onSurfaceVariant)
+                    // Banner Box
+                    Box(modifier = Modifier.weight(1.5f)) {
+                        ClayCard(
+                            cornerRadius = 20.dp,
+                            elevation = 6.dp,
+                            backgroundColor = colors.surface,
+                            onClick = { bannerPicker.launch("image/*") }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(100.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (bannerUri != null) {
+                                    AsyncImage(
+                                        model = bannerUri,
+                                        contentDescription = "Banner",
+                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                } else {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.CloudUpload, contentDescription = null, tint = colors.primary)
+                                        Text("Banner", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            Text("Upload Banner Image")
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .border(1.dp, colors.onSurfaceVariant, RoundedCornerShape(8.dp))
-                    .clickable { bannerPicker.launch("image/*") },
-                contentAlignment = Alignment.Center
-            ) {
-                if (bannerUri != null) {
-                    AsyncImage(
-                        model = bannerUri,
-                        contentDescription = "Banner Image",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(32.dp), tint = colors.onSurfaceVariant)
-                        Text("Upload Banner", textAlign = TextAlign.Center, color = colors.onSurfaceVariant)
-                    }
-                }
-            }
+                Spacer(Modifier.height(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Open Club", modifier = Modifier.weight(1f))
-                Switch(
-                    checked = isPublic,
-                    onCheckedChange = { isPublic = it },
-                )
-            }
-
-            Spacer(Modifier.weight(1f))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Cancel")
-                }
-                Button(
-
+                ClayButton(
+                    text = "Create Club",
                     onClick = {
                         if (!canCreateClubAccess) {
-                            Toast.makeText(context, "You do not have permission to create a club", Toast.LENGTH_SHORT).show()
-                            return@Button
+                            Toast.makeText(context, "No permission", Toast.LENGTH_SHORT).show()
+                            return@ClayButton
                         }
                         coroutineScope.launch {
                             val resolvedCategoryId = if (requiresCategorySelection) {
                                 val selectedName = selectedCategoryName.trim()
                                 if (selectedName.isBlank()) {
-                                    Toast.makeText(context, "Please choose a category", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Choose category", Toast.LENGTH_SHORT).show()
                                     return@launch
                                 }
                                 val existingCategory = categories.firstOrNull { it.name.equals(selectedName, ignoreCase = true) }
@@ -318,7 +389,7 @@ fun CreateClubScreen(
                                     when (categoryViewModel.saveCategoryDirect(newCategory)) {
                                         is Resource.Success -> newCategory.categoryId
                                         is Resource.Error -> {
-                                            Toast.makeText(context, "Failed to create category", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Category fail", Toast.LENGTH_SHORT).show()
                                             return@launch
                                         }
                                         else -> return@launch
@@ -329,12 +400,7 @@ fun CreateClubScreen(
                             }
 
                             val id = System.currentTimeMillis().toString()
-                            val clubUser = ClubUser(
-                                clubId = id,
-                                categoryId = resolvedCategoryId,
-                                userId = userId,
-                                role = ClubRole.ADMIN
-                            )
+                            val clubUser = ClubUser(clubId = id, categoryId = resolvedCategoryId, userId = userId, role = ClubRole.ADMIN)
                             val club = Club(
                                 clubId = id,
                                 name = clubName,
@@ -347,13 +413,12 @@ fun CreateClubScreen(
                             clubViewModel.createClub(club, clubUser)
                         }
                     },
-                    enabled = clubName.isNotBlank() &&
-                        canCreateClubAccess &&
-                        operationStatus !is Resource.Loading &&
-                        (!requiresCategorySelection || selectedCategoryName.isNotBlank()),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Create")
+                    enabled = clubName.isNotBlank() && canCreateClubAccess && (operationStatus !is Resource.Loading),
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                )
+                
+                if (operationStatus is Resource.Loading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = colors.primary)
                 }
             }
         }

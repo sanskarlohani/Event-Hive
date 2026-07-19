@@ -24,6 +24,7 @@ class UserRepositoryImpl @Inject constructor(
 ) : UserRepository {
 
     private val usersCol = firebaseFirestore.collection("users")
+    private var cachedUser: User? = null
 
     // One-time suspend operations
     override suspend fun saveUser(user: User): Resource<Unit> = try {
@@ -67,9 +68,11 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentUser(): User? = try {
         val uid = firebaseAuth.currentUser?.uid ?: return null
-        usersCol.document(uid).get().await().toSafeUser()
+        val user = usersCol.document(uid).get().await().toSafeUser()
+        cachedUser = user
+        user
     } catch (_: Exception) {
-        null
+        cachedUser
     }
 
     override suspend fun joinClubForUser(userId: String, categoryId: String, clubId: String): Resource<Unit> {
@@ -145,10 +148,14 @@ class UserRepositoryImpl @Inject constructor(
             trySend(null).isSuccess
             close()
         } else {
+            // Emit cached user immediately if available
+            cachedUser?.let { trySend(it).isSuccess }
+
             val registration: ListenerRegistration = usersCol.document(currentUid)
                 .addSnapshotListener { snap, err ->
                     if (err != null) { close(err); return@addSnapshotListener }
                     val user = snap?.toSafeUser()
+                    cachedUser = user
                     trySend(user).isSuccess
                 }
             awaitClose { registration.remove() }

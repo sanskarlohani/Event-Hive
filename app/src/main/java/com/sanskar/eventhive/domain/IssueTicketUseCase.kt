@@ -4,6 +4,7 @@ import android.util.Log
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.data.model.Team
 import com.sanskar.eventhive.data.model.Ticket
+import com.sanskar.eventhive.data.repository.ChatRepository
 import com.sanskar.eventhive.data.repository.Inteface.EventRepository
 import com.sanskar.eventhive.data.repository.Inteface.TicketRepository
 import com.sanskar.eventhive.data.repository.Inteface.UserRepository
@@ -13,6 +14,7 @@ class IssueTicketUseCase @Inject constructor(
     private val ticketRepository: TicketRepository,
     private val eventRepository:  EventRepository,
     private val userRepository:   UserRepository,
+    private val chatRepository:   ChatRepository,
 ) {
     suspend operator fun invoke(ticket: Ticket, team: Team): Resource<Unit> {
         // 1) create the ticket + team
@@ -31,8 +33,6 @@ class IssueTicketUseCase @Inject constructor(
             teamId     = ticket.teamId,
             participantIds = ticket.participantIds.ifEmpty { team.teamMemberIds }
         )
-        Log.d("IssueTicket", "step2 ${ticket}")
-        Log.d("IssueTicket", "step2 ${team.teamMemberIds}")
 
         if (eventRes is Resource.Error) {
             Log.e("IssueTicket", "step2 failed", eventRes.exception)
@@ -51,6 +51,15 @@ class IssueTicketUseCase @Inject constructor(
             Log.e("IssueTicket", "step3 failed", userRes.exception)
             return userRes
         }
+
+        // 4) Grant access to event chat
+        chatRepository.grantAccess(
+            roomId = "event_${ticket.eventId}",
+            type = "event",
+            relatedId = ticket.eventId,
+            categoryId = ticket.categoryId,
+            clubId = ticket.clubId
+        )
 
         return Resource.Success(Unit)
     }

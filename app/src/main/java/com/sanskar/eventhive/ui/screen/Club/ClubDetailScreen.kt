@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,9 +24,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
@@ -76,6 +80,8 @@ import coil.compose.AsyncImage
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.data.model.ClubRole
 import com.sanskar.eventhive.data.model.Event
+import com.sanskar.eventhive.ui.components.ClayButton
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.navigation.NavigationItem
 import com.sanskar.eventhive.ui.permissions.canCreateEvent
 import com.sanskar.eventhive.ui.permissions.canManageClubMembers
@@ -197,6 +203,11 @@ fun ClubDetailScreen(
                     }
                 },
                 actions = {
+                    if (joined) {
+                        IconButton(onClick = { navController.navigate("chat/club_$clubId") }) {
+                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Club chat")
+                        }
+                    }
                     if (canOpenClubSettings) {
                         IconButton(
                             onClick = {
@@ -220,55 +231,48 @@ fun ClubDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ClayCard(
+                cornerRadius = 28.dp,
+                elevation = 10.dp,
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(64.dp)
+                                .size(84.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer),
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(3.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (!club?.logoUrl.isNullOrBlank()) {
-                                AsyncImage(
-                                    model = club?.logoUrl,
-                                    contentDescription = "Club logo",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                val initials = club?.name
-                                    ?.split(" ")
-                                    ?.mapNotNull { it.firstOrNull()?.toString() }
-                                    ?.joinToString("")
-                                    .orEmpty()
-                                    .take(2)
-                                    .uppercase(Locale.getDefault())
-                                Text(
-                                    text = initials,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            }
+                            val url = club?.logoUrl
+                            Log.d("ClubDetailScreen", "Rendering logo: $url")
+                            AsyncImage(
+                                model = url,
+                                contentDescription = "Club logo",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                error = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground),
+                                placeholder = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground),
+                                onLoading = { Log.d("ClubDetailScreen", "Logo loading...") },
+                                onSuccess = { Log.d("ClubDetailScreen", "Logo loaded successfully") },
+                                onError = { Log.e("ClubDetailScreen", "Logo failed to load: ${it.result.throwable.message}") }
+                            )
                         }
                         Column(
                             modifier = Modifier.weight(1f),
@@ -276,13 +280,15 @@ fun ClubDetailScreen(
                         ) {
                             Text(
                                 text = club?.name ?: "Loading...",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = if (isPublic) "Public club" else "Private club",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -295,7 +301,7 @@ fun ClubDetailScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         ClubStatPill(
                             modifier = Modifier.weight(1f),
@@ -318,7 +324,8 @@ fun ClubDetailScreen(
                     }
 
                     val joinLeaveEnabled = !isAdmin && (joined || isPublic)
-                    Button(
+                    ClayButton(
+                        text = if (joined) "Leave Club" else "Join Club",
                         onClick = {
                             if (joined) {
                                 clubViewModel.leaveClub(categoryId, clubId, userId)
@@ -327,11 +334,11 @@ fun ClubDetailScreen(
                             }
                         },
                         enabled = joinLeaveEnabled,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(if (joined) "Leave Club" else "Join Club")
-                    }
+                        backgroundColor = if (joined) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primary,
+                        textColor = if (joined) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.fillMaxWidth().height(52.dp)
+                    )
+                    
                     if (!joinLeaveEnabled) {
                         Text(
                             text = if (isAdmin) {
@@ -340,28 +347,35 @@ fun ClubDetailScreen(
                                 "This is a private club. Joining is restricted."
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
                         )
                     }
 
                     if (canCreateEventAccess) {
-                        OutlinedButton(
-                            onClick = {
-                                navController.navigate(
-                                    NavigationItem.CreateEvent.createRoute(categoryId, clubId)
-                                )
-                            },
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Create Event")
-                        }
-                        FilledTonalButton(
-                            onClick = { showExportDialog = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("Download Members Data")
+                            ClayButton(
+                                text = "Create Event",
+                                onClick = {
+                                    navController.navigate(
+                                        NavigationItem.CreateEvent.createRoute(categoryId, clubId)
+                                    )
+                                },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                                textColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            ClayButton(
+                                text = "Members Data",
+                                onClick = { showExportDialog = true },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                textColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
                         }
                     }
                 }
@@ -496,30 +510,30 @@ fun EventCard(
     val timeText = zoned?.let { DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()).format(it) }
         .orEmpty()
 
-    Card(
+    ClayCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        cornerRadius = 20.dp,
+        elevation = 8.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.Top
         ) {
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .width(72.dp)
-                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                    .width(76.dp)
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = dateText,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -530,39 +544,50 @@ fun EventCard(
             ) {
                 Text(
                     text = event.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Filled.AccessTime,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text(timeText, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = timeText, 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Filled.LocationOn,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Text(event.venue, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = event.venue, 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    OutlinedButton(
+                    ClayButton(
+                        text = "Details",
                         onClick = onDetailsClick,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Details")
-                    }
+                        modifier = Modifier.width(100.dp).height(36.dp),
+                        cornerRadius = 10.dp,
+                        backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    )
                 }
             }
         }

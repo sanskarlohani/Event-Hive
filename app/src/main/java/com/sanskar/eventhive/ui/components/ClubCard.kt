@@ -1,6 +1,8 @@
 package com.sanskar.eventhive.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,35 +52,22 @@ fun ClubCard(
                 // Icon 
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(68.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                    MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            )
-                        ),
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (!club.logoUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = club.logoUrl,
-                            contentDescription = club.name,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Text(
-                            text = club.name.firstOrNull()?.toString() ?: "",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    AsyncImage(
+                        model = club.logoUrl,
+                        contentDescription = club.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape),
+                        error = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground),
+                        placeholder = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))

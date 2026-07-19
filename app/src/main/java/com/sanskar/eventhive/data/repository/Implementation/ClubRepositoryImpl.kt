@@ -85,11 +85,31 @@ class ClubRepositoryImpl @Inject constructor(
 
 
     override suspend fun updateClub(club: Club): Resource<Unit> = try {
+        var updatedClub = club
+
+        if (!club.logoUrl.isNullOrBlank() && (club.logoUrl.startsWith("content://") || club.logoUrl.startsWith("file://"))) {
+            val logoUri = club.logoUrl.toUri()
+            val filename = "${club.name}_logo_${System.currentTimeMillis()}"
+            val ref = firebaseStorage.reference.child("club_logos/${club.name}/$filename")
+            ref.putFile(logoUri).await()
+            val uploadedLogoUrl = ref.downloadUrl.await().toString()
+            updatedClub = updatedClub.copy(logoUrl = uploadedLogoUrl)
+        }
+
+        if (!club.bannerUrl.isNullOrBlank() && (club.bannerUrl.startsWith("content://") || club.bannerUrl.startsWith("file://"))) {
+            val bannerUri = club.bannerUrl.toUri()
+            val filename = "${club.name}_banner_${System.currentTimeMillis()}"
+            val ref = firebaseStorage.reference.child("club_banners/${club.name}/$filename")
+            ref.putFile(bannerUri).await()
+            val uploadedBannerUrl = ref.downloadUrl.await().toString()
+            updatedClub = updatedClub.copy(bannerUrl = uploadedBannerUrl)
+        }
+
         firebaseFirestore.collection(CATEGORIES)
-            .document(club.categoryId)
+            .document(updatedClub.categoryId)
             .collection(CLUBS)
-            .document(club.clubId)
-            .set(club)
+            .document(updatedClub.clubId)
+            .set(updatedClub)
             .await()
         Resource.Success(Unit)
     } catch (e: Exception) {

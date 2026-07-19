@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -620,24 +621,26 @@ private fun ClubGrid(
                                             )
                                     )
                                 }
-                                if (!club.logoUrl.isNullOrBlank()) {
-                                    Box(
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(10.dp)
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AsyncImage(
+                                        model = club.logoUrl,
+                                        contentDescription = "${club.name} logo",
+                                        contentScale = ContentScale.Crop,
                                         modifier = Modifier
-                                            .padding(8.dp)
-                                            .size(30.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        AsyncImage(
-                                            model = club.logoUrl,
-                                            contentDescription = "${club.name} logo",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .size(26.dp)
-                                                .clip(CircleShape)
-                                        )
-                                    }
+                                            .size(40.dp)
+                                            .clip(CircleShape),
+                                        error = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground),
+                                        placeholder = androidx.compose.ui.res.painterResource(com.sanskar.eventhive.R.drawable.ic_launcher_foreground)
+                                    )
                                 }
                             }
                             Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {

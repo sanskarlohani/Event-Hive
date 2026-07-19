@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.ConfirmationNumber
@@ -112,6 +113,10 @@ fun EventDetailScreen(
     val tickets by ticketViewModel.ticketsForEvent.collectAsStateWithLifecycle()
     val event by eventViewModel.event.collectAsStateWithLifecycle()
 
+    val registered = remember(event?.participantsIds, userId) {
+        event?.participantsIds?.contains(userId) == true
+    }
+
     LaunchedEffect(categoryId, clubId, eventId) {
         eventViewModel.getEvent(categoryId, clubId, eventId)
         ticketViewModel.getTicketsForEvent(categoryId, clubId, eventId)
@@ -130,6 +135,11 @@ fun EventDetailScreen(
                     }
                 },
                 actions = {
+                    if (registered) {
+                        IconButton(onClick = { navController.navigate("chat/event_$eventId") }) {
+                            Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "Event chat")
+                        }
+                    }
                     if (isEventManager || isOrganizer) {
                         IconButton(
                             onClick = {

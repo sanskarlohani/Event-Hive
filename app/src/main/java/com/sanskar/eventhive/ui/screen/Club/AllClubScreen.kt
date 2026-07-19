@@ -1,7 +1,7 @@
 package com.sanskar.eventhive.ui.screen.Club
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,20 +25,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -53,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +57,8 @@ import coil.compose.AsyncImage
 import com.sanskar.eventhive.data.Resource
 import com.sanskar.eventhive.data.model.Club
 import com.sanskar.eventhive.ui.components.BottomBarScaffold
+import com.sanskar.eventhive.ui.components.ClayButton
+import com.sanskar.eventhive.ui.components.ClayCard
 import com.sanskar.eventhive.ui.navigation.NavigationItem
 import com.sanskar.eventhive.ui.permissions.canCreateClub
 import com.sanskar.eventhive.ui.theme.AppDimens
@@ -133,7 +130,10 @@ fun AllClubScreen(
         floatingActionButton = {
             if (canCreateClub) {
                 FloatingActionButton(
-                    onClick = { navController.navigate(NavigationItem.CreateClub.createRoute("__select_category__")) }
+                    onClick = { navController.navigate(NavigationItem.CreateClub.createRoute("__select_category__")) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = CircleShape
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Create club")
                 }
@@ -185,34 +185,59 @@ fun AllClubScreen(
         if (showFilters) {
             ModalBottomSheet(
                 onDismissRequest = { showFilters = false },
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Filters", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        "Filters",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
                     Text(
                         "Visibility",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(onClick = { onlyPublic = false }) {
-                            Text("All")
-                        }
-                        FilledTonalButton(onClick = { onlyPublic = true }) {
-                            Text("Open Only")
-                        }
-                    }
-                    TextButton(
-                        onClick = { showFilters = false },
-                        modifier = Modifier.align(Alignment.End)
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Done")
+                        ClayButton(
+                            text = "All Clubs",
+                            onClick = { onlyPublic = false },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            backgroundColor = if (!onlyPublic) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            textColor = if (!onlyPublic) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            cornerRadius = 12.dp
+                        )
+                        ClayButton(
+                            text = "Public Only",
+                            onClick = { onlyPublic = true },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            backgroundColor = if (onlyPublic) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            textColor = if (onlyPublic) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            cornerRadius = 12.dp
+                        )
                     }
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    ClayButton(
+                        text = "Apply Filters",
+                        onClick = { showFilters = false },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        cornerRadius = 16.dp
+                    )
+                    
+                    Spacer(Modifier.navigationBarsPadding())
                 }
             }
         }
@@ -238,13 +263,13 @@ private fun TabStrip(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                    fontWeight = if (selectedTab == tab) FontWeight.SemiBold else FontWeight.Medium
+                    fontWeight = if (selectedTab == tab) FontWeight.ExtraBold else FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Box(
                     modifier = Modifier
-                        .height(3.dp)
-                        .width(26.dp)
+                        .height(4.dp)
+                        .width(30.dp)
                         .clip(CircleShape)
                         .background(
                             if (selectedTab == tab) MaterialTheme.colorScheme.primary
@@ -263,23 +288,23 @@ private fun ClubDiscoveryCard(
     onJoinClick: () -> Unit,
     onOpenClick: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ClayCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onOpenClick,
+        cornerRadius = 24.dp,
+        elevation = 8.dp,
+        backgroundColor = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onOpenClick)
-                .padding(12.dp),
+                .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(width = 124.dp, height = 96.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .size(width = 110.dp, height = 90.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(
                         Brush.linearGradient(
                             listOf(
@@ -297,29 +322,29 @@ private fun ClubDiscoveryCard(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-                if (!club.logoUrl.isNullOrBlank()) {
-                    Box(
+                
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                        .align(Alignment.TopStart),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = club.logoUrl ?: com.sanskar.eventhive.R.drawable.ic_launcher_foreground,
+                        contentDescription = "${club.name} logo",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .padding(8.dp)
-                            .size(34.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f))
-                            .align(Alignment.TopStart),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = club.logoUrl,
-                            contentDescription = "${club.name} logo",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                        )
-                    }
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -327,8 +352,8 @@ private fun ClubDiscoveryCard(
             ) {
                 Text(
                     text = club.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -349,35 +374,31 @@ private fun ClubDiscoveryCard(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${club.members.size} members",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (club.isPublic) "Open club" else "Closed club",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            
             if (isJoined) {
-                FilledTonalButton(onClick = onOpenClick) {
-                    Text("Open")
-                }
+                ClayButton(
+                    text = "Open",
+                    onClick = onOpenClick,
+                    modifier = Modifier.width(70.dp).height(36.dp),
+                    cornerRadius = 10.dp,
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    textColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             } else {
-                OutlinedButton(onClick = onJoinClick) {
-                    Text("Join")
-                }
+                ClayButton(
+                    text = "Join",
+                    onClick = onJoinClick,
+                    modifier = Modifier.width(70.dp).height(36.dp),
+                    cornerRadius = 10.dp,
+                    backgroundColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -385,15 +406,18 @@ private fun ClubDiscoveryCard(
 
 @Composable
 private fun EmptyStateCard(message: String) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+    ClayCard(
+        cornerRadius = 16.dp,
+        elevation = 4.dp,
+        backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp),
+            textAlign = TextAlign.Center
         )
     }
 }

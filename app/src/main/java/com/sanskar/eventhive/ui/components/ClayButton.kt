@@ -38,9 +38,10 @@ fun ClayButton(
     enabled: Boolean = true,
     icon: (@Composable () -> Unit)? = null
 ) {
-    val alpha = if (enabled) 1f else 0.5f
-    val shadowColor = Color.Black.copy(alpha = 0.15f * alpha)
-    val highlightColor = Color.White.copy(alpha = 0.4f * alpha)
+    val baseAlpha = backgroundColor.alpha
+    val effectiveAlpha = if (enabled) baseAlpha else baseAlpha * 0.5f
+    val shadowColor = Color.Black.copy(alpha = 0.15f * (if (enabled) 1f else 0.5f))
+    val highlightColor = Color.White.copy(alpha = 0.4f * (if (enabled) 1f else 0.5f))
 
     Box(
         modifier = modifier
@@ -68,7 +69,7 @@ fun ClayButton(
                             RoundRect(
                                 rect = Rect(0f, 0f, size.width, size.height),
                                 radiusX = cornerRadiusPx,
-                                radiusY = cornerRadiusPx
+                                radiusY = cornerRadiusPx,
                             )
                         )
                     }
@@ -76,7 +77,7 @@ fun ClayButton(
                 }
             }
             .clip(RoundedCornerShape(cornerRadius))
-            .background(backgroundColor.copy(alpha = alpha))
+            .background(backgroundColor.copy(alpha = effectiveAlpha))
             .drawBehind {
                 val strokeWidth = 3.dp.toPx()
                 val cornerRadiusPx = cornerRadius.toPx()
@@ -114,7 +115,7 @@ fun ClayButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
-                color = textColor.copy(alpha = alpha)
+                color = textColor.copy(alpha = if (enabled) textColor.alpha else textColor.alpha * 0.5f)
             )
         }
     }

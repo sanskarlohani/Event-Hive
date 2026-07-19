@@ -11,11 +11,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.sanskar.eventhive.data.repository.toSafeUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,6 +31,9 @@ class ChatViewModel @Inject constructor(
     val inputText = MutableStateFlow("")
 
     private val _currentUserProfile = MutableStateFlow<com.sanskar.eventhive.data.model.User?>(null)
+
+    private val _currentAnonAlias = MutableStateFlow<String?>(null)
+    val currentAnonAlias: StateFlow<String?> = _currentAnonAlias.asStateFlow()
 
     private val _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
@@ -55,8 +55,48 @@ class ChatViewModel @Inject constructor(
             if (uid.isNotBlank()) {
                 firestore.collection("users").document(uid)
                     .addSnapshotListener { snapshot, _ ->
-                        _currentUserProfile.value = snapshot?.toSafeUser()
+                        val profile = snapshot?.toSafeUser()
+                        _currentUserProfile.value = profile
+                        
+                        // Self-healing: Ensure all joined clubs have chat access
+                        profile?.clubs?.forEach { userClub ->
+                            viewModelScope.launch {
+                                chatRepository.grantAccess(
+                                    roomId = "club_${userClub.clubId}",
+                                    type = "club",
+                                    relatedId = userClub.clubId,
+                                    categoryId = userClub.categoryId
+                                )
+                            }
+                        }
+
+                        // Ensure all registered events have chat access
+                        profile?.events?.forEach { userEvent ->
+                            viewModelScope.launch {
+                                chatRepository.grantAccess(
+                                    roomId = "event_${userEvent.eventId}",
+                                    type = "event",
+                                    relatedId = userEvent.eventId,
+                                    categoryId = userEvent.categoryId
+                                )
+                            }
+                        }
+                        
+                        // If we are in an anonymous room, ensure we have the alias
+                        if (currentMetadata.type == "anonymous" && profile != null) {
+                            fetchAnonAlias(profile.collegeId)
+                        }
                     }
+            }
+        }
+    }
+
+    private fun fetchAnonAlias(collegeId: String) {
+        viewModelScope.launch {
+            runCatching {
+                chatRepository.getAnonAlias(collegeId)
+            }.onSuccess {
+                _currentAnonAlias.value = it
             }
         }
     }
@@ -80,9 +120,14 @@ class ChatViewModel @Inject constructor(
         metadataJob = viewModelScope.launch {
             chatRepository.getRoomMetadata(roomId).collect { metadata ->
                 currentMetadata = metadata
-                if (loadedMessages.isNotEmpty()) {
-                    _messagesState.value = MessageUiState.Success(loadedMessages, metadata)
+                
+                // If it's an anonymous room, fetch the user's alias for "own message" detection
+                val profile = _currentUserProfile.value
+                if (metadata.type == "anonymous" && profile != null) {
+                    fetchAnonAlias(profile.collegeId)
                 }
+
+                _messagesState.value = MessageUiState.Success(loadedMessages, metadata)
             }
         }
 
@@ -157,7 +202,7 @@ class ChatViewModel @Inject constructor(
 
     fun canDelete(message: RtdbChatMessage): Boolean {
         val uid = auth.currentUser?.uid.orEmpty()
-        val isOwn = message.senderId == uid
+        val isOwn = message.senderId == uid || (message.senderId == "anon" && message.displayName == _currentAnonAlias.value)
         val canModerate = permissionHelper.hasPermission("canModerateChat")
         return isOwn || canModerate
     }

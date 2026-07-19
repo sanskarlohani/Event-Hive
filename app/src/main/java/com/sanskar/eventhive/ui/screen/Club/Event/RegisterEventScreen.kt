@@ -121,12 +121,17 @@ fun EventRegistrationScreen(
     val memberIds = remember { mutableStateListOf<String>() }
     LaunchedEffect(event?.minTeamSize) {
         memberIds.clear()
-        repeat((event?.minTeamSize ?: 1).coerceAtLeast(0)) { memberIds.add("") }
     }
 
     // Additional‐info answers
     val extraAnswers = remember { mutableStateMapOf<String, String>() }
-        .apply { event?.additionalInfoAskFromUser?.forEach { putIfAbsent(it.key, "") } }
+    LaunchedEffect(event) {
+        event?.additionalInfoAskFromUser?.forEach {
+            if (!extraAnswers.containsKey(it.key)) {
+                extraAnswers[it.key] = ""
+            }
+        }
+    }
 
     // Dialog controls
     var showMemberDialog by remember { mutableStateOf(value = false) }
@@ -208,8 +213,14 @@ fun EventRegistrationScreen(
                     Text(stringResource(R.string.registration_select_members, memberIds.filter { it.isNotBlank() }.size, maxOthers))
                 }
                 Spacer(Modifier.height(8.dp))
-                memberIds.forEach { id ->
-                    Text("• $id", style = MaterialTheme.typography.bodyMedium)
+                val memberNames = remember(memberIds, candidates, currentUser) {
+                    memberIds.filter { it.isNotBlank() }.map { id ->
+                        if (id == userId) currentUser?.name ?: id
+                        else candidates.find { it.userId == id }?.name ?: id
+                    }
+                }
+                memberNames.forEach { name ->
+                    Text("• $name", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(4.dp))
                 }
             }
